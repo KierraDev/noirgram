@@ -1,18 +1,10 @@
 // Floating surfaces: context/dropdown menus and modal dialogs become thick glass islands
 // that spring in from their origin. `body` in selectors outranks upstream component rules.
 
-@mixin glass-surface($alpha: var(--ng-glass-alpha)) {
-  background-color: color-mix(in srgb, var(--color-background) $alpha, transparent);
-  backdrop-filter: blur(var(--ng-glass-blur)) saturate(var(--ng-glass-saturate));
-  box-shadow:
-    var(--ng-rim-inner),
-    0 0 0 1px var(--ng-hairline),
-    var(--ng-shadow-float);
+@use "glass";
 
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-background);
-    backdrop-filter: none;
-  }
+@mixin glass-surface($alpha: var(--ng-glass-alpha)) {
+  @include glass.surface($alpha);
 }
 
 body .Menu .bubble,

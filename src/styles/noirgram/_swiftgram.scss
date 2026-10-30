@@ -1,0 +1,41 @@
+// Swiftgram look on top of the upstream islands: the chat header and the composer float as glass
+// over the wallpaper, bubbles get iOS-like roundness. Only chrome turns to glass, never content.
+
+@use "glass";
+
+:root {
+  --border-radius-messages: 1.125rem;
+}
+
+// The wallpaper and messages show through, slightly blurred, while scrolling under the islands
+body .MiddleHeader {
+  @include glass.surface(72%);
+
+  // The tools sit on the same glass instead of an opaque pill of their own
+  .header-tools {
+    background-color: transparent;
+  }
+}
+
+body .Composer.is-chat-composer {
+  @include glass.surface(80%);
+}
+
+// Solid fallbacks: the glass needs the upstream opaque backgrounds back
+body.no-menu-blur {
+  .MiddleHeader,
+  .Composer.is-chat-composer {
+    background-color: var(--color-background);
+    backdrop-filter: none;
+  }
+
+  .MiddleHeader .header-tools {
+    background-color: var(--color-background);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body .MiddleHeader .header-tools {
+    background-color: var(--color-background);
+  }
+}
