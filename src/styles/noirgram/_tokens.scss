@@ -1,0 +1,48 @@
+:root {
+  --ng-blue: #87a6df;
+  --ng-blue-deep: #4a649e;
+  --ng-silver: #d5d6d8;
+
+  --ng-ease-spring:
+    linear(
+      0,
+      0.006,
+      0.025 2.8%,
+      0.101 6.1%,
+      0.539 18.9%,
+      0.721 25.3%,
+      0.849 31.5%,
+      0.937 38.1%,
+      0.968 41.8%,
+      0.991 45.7%,
+      1.006 50.1%,
+      1.015 55%,
+      1.017 63.9%,
+      1.001
+    );
+  --ng-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ng-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --ng-glass-blur: 28px;
+  --ng-glass-saturate: 180%;
+  --ng-glass-alpha: 78%;
+  --ng-rim: rgba(255, 255, 255, 0.7);
+  --ng-rim-inner: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --ng-hairline: rgba(15, 20, 40, 0.08);
+  --ng-shadow-float:
+    0 1px 1px rgba(20, 25, 50, 0.06),
+    0 8px 24px -6px rgba(20, 25, 50, 0.16),
+    0 24px 64px -16px rgba(20, 25, 50, 0.2);
+  --ng-modal-scrim: rgba(12, 14, 22, 0.28);
+}
+
+html.theme-dark {
+  --ng-glass-alpha: 74%;
+  --ng-rim-inner: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --ng-hairline: rgba(255, 255, 255, 0.08);
+  --ng-shadow-float:
+    0 1px 1px rgba(0, 0, 0, 0.22),
+    0 8px 24px -6px rgba(0, 0, 0, 0.5),
+    0 24px 64px -16px rgba(0, 0, 0, 0.55);
+  --ng-modal-scrim: rgba(4, 5, 8, 0.55);
+}

@@ -9,6 +9,7 @@
 @use "common";
 @use "composer-primitives";
 @use "print";
+@use "noirgram";
 
 html,
 body {
@@ -96,6 +97,9 @@ body.is-ios {
 
 body.is-tauri {
   --custom-cursor: default;
+}
+
+body.is-tauri.is-macos {
   --window-controls-width: 5rem;
 }
 

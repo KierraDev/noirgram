@@ -34,7 +34,7 @@ export const BETA_CHANGELOG_URL = 'https://telegra.ph/WebA-Beta-03-20';
 export const DEBUG_GRAMJS = false;
 
 export const PAGE_TITLE = import.meta.env.TG_APP_TITLE;
-export const PAGE_TITLE_TAURI = 'Telegram Air';
+export const PAGE_TITLE_TAURI = 'Noirgram';
 export const TELEGRAM_API_ID = Number(import.meta.env.TG_TELEGRAM_API_ID);
 export const TELEGRAM_API_HASH = import.meta.env.TG_TELEGRAM_API_HASH;
 export const TEST_SESSION = import.meta.env.TG_TEST_SESSION;
@@ -426,7 +426,7 @@ export const BOT_VERIFICATION_PEERS_LIMIT = 20;
 export const CALL_PROTOCOL_LIBRARY_VERSIONS = ['13.0.0'];
 
 export const LIGHT_THEME_BG_COLOR = '#99BA92';
-export const DARK_THEME_BG_COLOR = '#000000';
+export const DARK_THEME_BG_COLOR = '#0B0C10';
 export const PEER_COLOR_BG_OPACITY = '1a';
 export const PEER_COLOR_BG_ACTIVE_OPACITY = '2b';
 export const PEER_COLOR_GRADIENT_STEP = 5; // px

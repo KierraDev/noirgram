@@ -3376,6 +3376,9 @@ export interface LangPair {
   'SettingsKeywordsLastSeen': undefined;
   'SettingsKeywordsLogOut': undefined;
   'SettingsSearchEmpty': undefined;
+  'WindowMinimize': undefined;
+  'WindowMaximize': undefined;
+  'WindowRestore': undefined;
 }
 
 export interface LangPairWithVariables<V = LangVariable> {

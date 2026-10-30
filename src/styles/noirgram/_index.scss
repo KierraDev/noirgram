@@ -1,0 +1,6 @@
+// Noirgram desktop layer. Loaded after the upstream styles and kept out of `@layer`,
+// so it overrides upstream look without editing component stylesheets.
+
+@use "tokens";
+@use "window";
+@use "popups";

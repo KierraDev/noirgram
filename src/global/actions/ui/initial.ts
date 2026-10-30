@@ -6,7 +6,7 @@ import type { ActionReturnType, GlobalState } from '../../types';
 import { requestMutation } from '../../../lib/fasterdom/fasterdom';
 import { IS_ELECTRON, IS_MULTIACCOUNT_SUPPORTED, IS_TAURI } from '../../../util/browser/globalEnvironment';
 import {
-  IS_ANDROID, IS_IOS, IS_LINUX,
+  HAS_WINDOW_TITLE_BAR, IS_ANDROID, IS_IOS, IS_LINUX,
   IS_MAC_OS, IS_SAFARI, IS_TOUCH_ENV, IS_WINDOWS, setScrollbarWidthProperty,
 } from '../../../util/browser/windowEnvironment';
 import { getCurrentTabId } from '../../../util/establishMultitabRole';
@@ -165,6 +165,9 @@ addCallback((global: GlobalState) => {
     }
     if (IS_TAURI) {
       document.body.classList.add('is-tauri');
+    }
+    if (HAS_WINDOW_TITLE_BAR) {
+      document.body.classList.add('has-window-title-bar');
     }
     if (IS_ELECTRON) { // Legacy, pretend to be Tauri
       document.body.classList.add('is-tauri');

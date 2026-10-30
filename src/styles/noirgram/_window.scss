@@ -1,0 +1,19 @@
+// App-drawn title bar (Windows / Linux): the page content starts below it.
+// Body padding moves in-flow content; fixed full-window layers offset themselves with `--window-title-bar-height`.
+
+body.has-window-title-bar {
+  --window-title-bar-height: 2.25rem;
+
+  box-sizing: border-box;
+  padding-top: var(--window-title-bar-height);
+
+  dialog.Modal {
+    top: var(--window-title-bar-height);
+    height: calc(100% - var(--window-title-bar-height));
+  }
+
+  .Modal .modal-container,
+  .Modal .modal-backdrop {
+    top: var(--window-title-bar-height);
+  }
+}

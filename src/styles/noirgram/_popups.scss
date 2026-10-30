@@ -1,0 +1,82 @@
+// Floating surfaces: context/dropdown menus and modal dialogs become thick glass islands
+// that spring in from their origin. `body` in selectors outranks upstream component rules.
+
+@mixin glass-surface($alpha: var(--ng-glass-alpha)) {
+  background-color: color-mix(in srgb, var(--color-background) $alpha, transparent);
+  backdrop-filter: blur(var(--ng-glass-blur)) saturate(var(--ng-glass-saturate));
+  box-shadow:
+    var(--ng-rim-inner),
+    0 0 0 1px var(--ng-hairline),
+    var(--ng-shadow-float);
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-background);
+    backdrop-filter: none;
+  }
+}
+
+body .Menu .bubble,
+body .Menu.compact .bubble {
+  --animation-start-scale: 0.92;
+
+  padding: 0.375rem 0;
+  border-radius: 1rem;
+
+  @include glass-surface;
+
+  &.open:not(.closing) {
+    transition:
+      opacity 160ms var(--ng-ease-out),
+      transform 360ms var(--ng-ease-spring) !important;
+  }
+}
+
+body.no-menu-blur .Menu .bubble {
+  background-color: var(--color-background);
+  backdrop-filter: none;
+}
+
+body .Menu .MenuItem:not(.compact) {
+  width: auto;
+  margin: 0 0.375rem;
+  border-radius: 0.625rem;
+}
+
+body .Modal {
+  .modal-backdrop {
+    background-color: var(--ng-modal-scrim);
+    backdrop-filter: blur(4px);
+  }
+
+  &.transparent-backdrop .modal-backdrop {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
+
+  .modal-dialog {
+    transform: scale(0.94);
+    border-radius: 1.5rem;
+
+    @include glass-surface(92%);
+
+    transition:
+      transform 420ms var(--ng-ease-spring),
+      opacity 180ms var(--ng-ease-out);
+  }
+
+  &.open .modal-dialog {
+    transform: none;
+  }
+
+  &.closing .modal-dialog {
+    transform: scale(0.97);
+    transition:
+      transform 160ms var(--ng-ease-in),
+      opacity 160ms var(--ng-ease-in);
+  }
+}
+
+body.no-page-transitions .Modal .modal-dialog {
+  transform: none !important;
+  transition: none;
+}

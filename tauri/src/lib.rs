@@ -67,7 +67,7 @@ pub static LAST_URL: LazyLock<std::sync::Mutex<String>> =
 
 pub const DEFAULT_WINDOW_TITLE: &str = match std::option_env!("APP_TITLE") {
   Some(title) => title,
-  None => "Telegram Air",
+  None => "Noirgram",
 };
 
 pub const BASE_URL: &str = match std::option_env!("BASE_URL") {
@@ -380,6 +380,10 @@ pub(crate) fn open_new_window(
     };
     states.insert(window_label.to_string(), new_state);
   }
+
+  // The web app draws its own title bar with window controls on Windows and Linux
+  #[cfg(not(target_os = "macos"))]
+  let new_window_builder = new_window_builder.decorations(false).shadow(true);
 
   #[cfg(target_os = "macos")]
   let new_window_builder = new_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);

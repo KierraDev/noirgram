@@ -13,7 +13,7 @@ import {
   selectActionMessageBg, selectTabState, selectTheme, selectThemeValues,
 } from '../global/selectors';
 import { IS_TAURI } from '../util/browser/globalEnvironment';
-import { IS_INSTALL_PROMPT_SUPPORTED, PLATFORM_ENV } from '../util/browser/windowEnvironment';
+import { HAS_WINDOW_TITLE_BAR, IS_INSTALL_PROMPT_SUPPORTED, PLATFORM_ENV } from '../util/browser/windowEnvironment';
 import buildClassName from '../util/buildClassName';
 import { setupBeforeInstallPrompt } from '../util/installPrompt';
 import { ACCOUNT_SLOT, getAccountSlotUrl, getFirstLoggedInAccountSlot } from '../util/multiaccount';
@@ -40,6 +40,7 @@ import UiLoader from './common/UiLoader';
 import AppInactive from './main/AppInactive';
 import LockScreen from './main/LockScreen.async';
 import Main from './main/Main.async';
+import WindowTitleBar from './main/WindowTitleBar';
 // import Test from './test/demo/MessageTextStreamingTest';
 import Transition from './ui/Transition';
 
@@ -273,6 +274,7 @@ const App = ({
       </Transition>
       {activeKey === AppScreens.auth && isTestServer && <div className="test-server-badge">{lang('TestServer')}</div>}
       <Notifications />
+      {HAS_WINDOW_TITLE_BAR && <WindowTitleBar />}
     </UiLoader>
   );
 };

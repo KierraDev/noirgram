@@ -1,0 +1,116 @@
+.root {
+  position: fixed;
+  z-index: var(--z-window-title-bar);
+  top: 0;
+  right: 0;
+  left: 0;
+
+  display: flex;
+  align-items: stretch;
+
+  height: var(--window-title-bar-height);
+
+  color: var(--color-text);
+
+  background-color: var(--color-background-secondary);
+  box-shadow: inset 0 -1px 0 var(--color-background-menu-separator);
+
+  transition: color 150ms ease-out;
+}
+
+.blurred {
+  color: var(--color-text-secondary);
+
+  .logo {
+    opacity: 0.6;
+  }
+}
+
+.dragArea {
+  cursor: default;
+
+  overflow: hidden;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 0.5rem;
+  align-items: center;
+
+  min-width: 0;
+  padding-left: 0.75rem;
+}
+
+.logo {
+  flex-shrink: 0;
+
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0.1875rem;
+  border-radius: 0.375rem;
+
+  background-color: #87a6df;
+
+  transition: opacity 150ms ease-out;
+}
+
+.title {
+  overflow: hidden;
+
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.control {
+  cursor: default;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 2.875rem;
+  height: 100%;
+  padding: 0;
+  border: none;
+
+  color: inherit;
+
+  background: transparent;
+  outline: none;
+
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+
+  &:hover {
+    background-color: var(--color-interactive-element-hover);
+  }
+
+  &:active {
+    background-color: var(--color-background-compact-menu-hover);
+  }
+}
+
+.close:hover,
+.close:active {
+  color: #ffffff;
+  background-color: #e5484d;
+}
+
+.close:active {
+  background-color: #c73e43;
+}
+
+.glyph {
+  width: 0.625rem;
+  height: 0.625rem;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  shape-rendering: geometricPrecision;
+}

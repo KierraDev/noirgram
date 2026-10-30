@@ -2865,6 +2865,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "noirgram"
+version = "2.12.2"
+dependencies = [
+ "ab_glyph",
+ "cocoa",
+ "image",
+ "imageproc",
+ "log",
+ "objc",
+ "rand 0.10.3",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-deep-link",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-os",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "nom"
 version = "8.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5361,35 +5390,6 @@ dependencies = [
  "thiserror 2.0.21",
  "windows",
  "windows-version",
-]
-
-[[package]]
-name = "telegram_air"
-version = "2.12.2"
-dependencies = [
- "ab_glyph",
- "cocoa",
- "image",
- "imageproc",
- "log",
- "objc",
- "rand 0.10.3",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-deep-link",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-os",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "url",
- "uuid",
 ]
 
 [[package]]
