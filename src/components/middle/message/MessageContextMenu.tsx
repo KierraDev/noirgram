@@ -137,6 +137,7 @@ type OwnProps = {
   onCopyMessages?: (request: MessageCopyRequest, textFormat?: ClipboardTextFormat) => void;
   onCopyNumber?: NoneToVoidFunction;
   onDownload?: NoneToVoidFunction;
+  onSaveAs?: NoneToVoidFunction;
   onSaveGif?: NoneToVoidFunction;
   onToggleMusicInProfile?: NoneToVoidFunction;
   onCancelVote?: NoneToVoidFunction;
@@ -243,6 +244,7 @@ const MessageContextMenu = ({
   onCopyLink,
   onCopyNumber,
   onDownload,
+  onSaveAs,
   onSaveGif,
   onToggleMusicInProfile,
   onCancelVote,
@@ -594,6 +596,9 @@ const MessageContextMenu = ({
           <MenuItem icon="download" onClick={onDownload}>
             {isDownloading ? lang('ContextCancelDownload') : lang('AccActionDownload')}
           </MenuItem>
+        )}
+        {canDownload && !isDownloading && onSaveAs && (
+          <MenuItem icon="folder" onClick={onSaveAs}>{lang('NoirgramSaveAs')}</MenuItem>
         )}
         {canForward && <MenuItem icon="forward" onClick={onForward}>{lang('Forward')}</MenuItem>}
         {canSelect && <MenuItem icon="select" onClick={onSelect}>{lang('CommonSelect')}</MenuItem>}

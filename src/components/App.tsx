@@ -26,6 +26,7 @@ import { getActionMessageBg, getWallpaperBaseColor } from '../util/wallpaper';
 import { handoffWebLogin } from '../util/webLoginHandoff';
 import { updateSizes } from '../util/windowSize';
 
+import useDesktopHotkeys from '../hooks/tauri/useDesktopHotkeys';
 import useTauriDrag from '../hooks/tauri/useTauriDrag';
 import useAppLayout from '../hooks/useAppLayout';
 import useFileHoverOpen, {
@@ -86,6 +87,8 @@ const App = ({
   avatarShape,
 }: StateProps) => {
   const lang = useLang();
+
+  useDesktopHotkeys();
 
   const { isMobile } = useAppLayout();
   const isMobileOs = PLATFORM_ENV === 'iOS' || PLATFORM_ENV === 'Android';

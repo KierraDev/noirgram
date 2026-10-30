@@ -29,6 +29,7 @@
     "allow-mini-app-send-event",
     "core:event:default",
     "core:window:allow-is-fullscreen",
+    "core:window:allow-set-fullscreen",
     "core:window:allow-start-dragging",
     "core:window:allow-minimize",
     "core:window:allow-toggle-maximize",

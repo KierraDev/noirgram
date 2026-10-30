@@ -57,9 +57,9 @@ export default function initTauriApi() {
     return core.invoke<TauriDownloadSettings>('set_download_should_ask', { shouldAsk });
   }
 
-  async function prepareDownload(url: string, filename: string) {
+  async function prepareDownload(url: string, filename: string, shouldAsk?: boolean) {
     const core = await corePromise;
-    return core.invoke<boolean>('prepare_download', { url, filename });
+    return core.invoke<boolean>('prepare_download', { url, filename, shouldAsk });
   }
 
   // Rust `None` arrives as `null`

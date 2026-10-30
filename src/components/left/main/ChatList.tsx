@@ -13,6 +13,7 @@ import {
   CHAT_LIST_SLICE,
   SAVED_FOLDER_ID,
 } from '../../../config';
+import { IS_TAURI } from '../../../util/browser/globalEnvironment';
 import { IS_APP, IS_MAC_OS } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import { getOrderKey, getPinnedChatsCount } from '../../../util/folderManager';
@@ -114,17 +115,32 @@ const ChatList = ({
     : CHAT_LIST_SLICE;
   const [viewportIds, getMore] = useInfiniteScroll(undefined, orderedIds, undefined, chatListSlice);
 
-  // Support <Alt>+<Up/Down> to navigate between chats
-  useHotkeys(useMemo(() => (isActive && orderedIds?.length ? {
-    'Alt+ArrowUp': (e: KeyboardEvent) => {
+  // Support <Alt>+<Up/Down> to navigate between chats, plus the Telegram Desktop shortcuts in the desktop app
+  useHotkeys(useMemo(() => {
+    if (!isActive || !orderedIds?.length) return undefined;
+
+    const openPrevious = (e: KeyboardEvent) => {
       e.preventDefault();
       openNextChat({ targetIndexDelta: -1, orderedIds });
-    },
-    'Alt+ArrowDown': (e: KeyboardEvent) => {
+    };
+    const openNext = (e: KeyboardEvent) => {
       e.preventDefault();
       openNextChat({ targetIndexDelta: 1, orderedIds });
-    },
-  } : undefined), [isActive, orderedIds]));
+    };
+
+    return {
+      'Alt+ArrowUp': openPrevious,
+      'Alt+ArrowDown': openNext,
+      ...(IS_TAURI && {
+        'Ctrl+Shift+Tab': openPrevious,
+        'Ctrl+Tab': openNext,
+        'Ctrl+PageUp': openPrevious,
+        'Ctrl+PageDown': openNext,
+        'Ctrl+Shift+ArrowUp': openPrevious,
+        'Ctrl+Shift+ArrowDown': openNext,
+      }),
+    };
+  }, [isActive, orderedIds]));
 
   // Support <Cmd>+<Digit> to navigate between chats
   useEffect(() => {

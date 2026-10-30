@@ -2190,6 +2190,7 @@ export interface ActionPayloads {
   downloadMedia: {
     media: DownloadableMedia;
     originMessage?: ApiMessage;
+    shouldAskPath?: boolean;
   } & WithTabId;
   cancelMediaDownload: {
     media: DownloadableMedia;

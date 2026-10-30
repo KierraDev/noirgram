@@ -2,6 +2,7 @@ import type { ChangeEvent } from 'react';
 import { memo, useEffect, useMemo, useState } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
+import type { RegularLangKey } from '../../../types/language';
 import type {
   TauriDesktopSettings, TauriDownloadSettings, TauriProxyKind, TauriProxySettings,
 } from '../../../types/tauri';
@@ -35,6 +36,25 @@ const DEFAULT_PROXY_DRAFT: ProxyDraft = {
   port: '1080',
 };
 const MAX_PORT = 65535;
+
+// Shown as a cheat sheet; the handlers live in `useDesktopHotkeys`, `LeftColumn`, `ChatList` and `ChatFolders`
+const SHORTCUTS: { keys: string; labelKey: RegularLangKey }[] = [
+  { keys: 'Ctrl+K', labelKey: 'NoirgramShortcutQuickSearch' },
+  { keys: 'Ctrl+Shift+F', labelKey: 'NoirgramShortcutSearch' },
+  { keys: 'Ctrl+F', labelKey: 'NoirgramShortcutSearchInChat' },
+  { keys: 'Ctrl+Tab · Ctrl+PgDn', labelKey: 'NoirgramShortcutNextChat' },
+  { keys: 'Ctrl+Shift+Tab · Ctrl+PgUp', labelKey: 'NoirgramShortcutPreviousChat' },
+  { keys: 'Ctrl+1…8', labelKey: 'NoirgramShortcutChatByNumber' },
+  { keys: 'Ctrl+Shift+1…9', labelKey: 'NoirgramShortcutFolderByNumber' },
+  { keys: 'Ctrl+0', labelKey: 'NoirgramShortcutSaved' },
+  { keys: 'Ctrl+9', labelKey: 'NoirgramShortcutArchive' },
+  { keys: 'Ctrl+,', labelKey: 'NoirgramShortcutSettings' },
+  { keys: 'Ctrl+L', labelKey: 'NoirgramShortcutLock' },
+  { keys: 'Ctrl+W', labelKey: 'NoirgramShortcutClose' },
+  { keys: 'Ctrl+M', labelKey: 'NoirgramShortcutMinimize' },
+  { keys: 'F11', labelKey: 'NoirgramShortcutFullscreen' },
+  { keys: 'Ctrl+Q', labelKey: 'NoirgramShortcutQuit' },
+];
 
 // Desktop settings live in the Tauri shell: they apply to windows and to the WebView2 environment
 const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
@@ -241,6 +261,15 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
       <IslandDescription dir={lang.isRtl ? 'rtl' : undefined}>
         {lang('NoirgramDownloadsDesc')}
       </IslandDescription>
+
+      <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionShortcuts')}</IslandTitle>
+      <Island>
+        {SHORTCUTS.map(({ keys, labelKey }) => (
+          <ListItem key={keys} narrow inactive rightElement={<kbd className="noirgram-kbd">{keys}</kbd>}>
+            {lang(labelKey)}
+          </ListItem>
+        ))}
+      </Island>
     </>
   );
 };

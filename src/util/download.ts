@@ -4,6 +4,7 @@ import { pause } from './schedulers';
 type PendingDownload = {
   url: string;
   filename: string;
+  shouldAskPath?: boolean;
 };
 
 // Chrome prevents more than 10 downloads per second
@@ -13,8 +14,9 @@ const BATCH_INTERVAL = 1000;
 let pendingDownloads: PendingDownload[] = [];
 let planned = false;
 
-export default function download(url: string, filename: string) {
-  pendingDownloads.push({ url, filename });
+// `shouldAskPath` shows the "Save as" dialog in the desktop app even when it saves silently
+export default function download(url: string, filename: string, shouldAskPath?: boolean) {
+  pendingDownloads.push({ url, filename, shouldAskPath });
   if (!planned) {
     planned = true;
     setTimeout(async () => {
@@ -37,9 +39,9 @@ async function processQueue() {
   pendingDownloads = [];
 }
 
-async function downloadOne({ url, filename }: PendingDownload) {
+async function downloadOne({ url, filename, shouldAskPath }: PendingDownload) {
   // The desktop app may show a "Save as" dialog first; the download is skipped when it is cancelled
-  if (IS_TAURI && !await prepareTauriDownload(url, filename)) return;
+  if (IS_TAURI && !await prepareTauriDownload(url, filename, shouldAskPath)) return;
 
   const link = document.createElement('a');
   link.href = url;
@@ -54,9 +56,9 @@ async function downloadOne({ url, filename }: PendingDownload) {
   }
 }
 
-async function prepareTauriDownload(url: string, filename: string) {
+async function prepareTauriDownload(url: string, filename: string, shouldAskPath?: boolean) {
   try {
-    return await window.tauri.prepareDownload(new URL(url, window.location.href).href, filename);
+    return await window.tauri.prepareDownload(new URL(url, window.location.href).href, filename, shouldAskPath);
   } catch {
     return true;
   }

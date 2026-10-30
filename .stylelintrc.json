@@ -6,6 +6,7 @@
   ],
   "ignoreFiles": [
     "dist/**/*.css",
+    "tauri/target/**",
     "src/styles/icons.{scss,css}"
   ],
   "plugins": [

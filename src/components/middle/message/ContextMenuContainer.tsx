@@ -78,6 +78,7 @@ import {
 } from '../../../global/selectors';
 import { selectMessageDownloadableMedia } from '../../../global/selectors/media';
 import { selectSavedDialogIdFromMessage, selectThreadInfo } from '../../../global/selectors/threads';
+import { IS_TAURI } from '../../../util/browser/globalEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import { copyTextToClipboard } from '../../../util/clipboard';
 import { isUserId } from '../../../util/entities/ids';
@@ -676,6 +677,17 @@ const ContextMenuContainer = ({
     closeMenu();
   });
 
+  const handleSaveAsClick = useLastCallback(() => {
+    const global = getGlobal();
+    (album?.messages || [message]).forEach((msg) => {
+      const downloadableMedia = selectMessageDownloadableMedia(global, msg);
+      if (!downloadableMedia) return;
+
+      downloadMedia({ media: downloadableMedia, originMessage: msg, shouldAskPath: true });
+    });
+    closeMenu();
+  });
+
   const handleSaveGif = useLastCallback(() => {
     const video = getMessageVideo(message);
     saveGif({ gif: video! });
@@ -859,6 +871,7 @@ const ContextMenuContainer = ({
         onCopyMessages={handleCopyMessages}
         onCopyNumber={handleCopyNumber}
         onDownload={handleDownloadClick}
+        onSaveAs={IS_TAURI ? handleSaveAsClick : undefined}
         onSaveGif={handleSaveGif}
         onToggleMusicInProfile={handleToggleMusicInProfile}
         onCancelVote={handleCancelVote}

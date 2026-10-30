@@ -38,6 +38,7 @@ import { mapValues, omit, unique } from '../iteratees';
 import { replaceInStringsWithTeact } from '../replaceWithTeact';
 import { fastRaf } from '../schedulers';
 import { resetDateFormatCache } from './dateFormat';
+import { getNoirgramString } from './noirgramStrings';
 
 import Deferred from '../Deferred';
 import LimitedMap from '../primitives/LimitedMap';
@@ -488,6 +489,7 @@ function getString(langKey: LangKey, count: number) {
   if (langPackStringValue && isDeletedLangString(langPackStringValue)) langPackStringValue = undefined;
   langPackStringValue ??= !shouldForceFallback ? baseLangPack?.strings[langKey] : undefined;
   if (langPackStringValue && isDeletedLangString(langPackStringValue)) langPackStringValue = undefined;
+  langPackStringValue ??= getNoirgramString(langKey, language?.langCode, language?.baseLangCode);
   const shouldUseFallback = langPackStringValue === undefined;
 
   if (shouldUseFallback && !fallbackLangPack) {

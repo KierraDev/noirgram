@@ -729,7 +729,9 @@ addActionHandler('cancelMediaHashDownloads', (global, actions, payload): ActionR
 });
 
 addActionHandler('downloadMedia', (global, actions, payload): ActionReturnType => {
-  const { media, originMessage, tabId = getCurrentTabId() } = payload;
+  const {
+    media, originMessage, shouldAskPath, tabId = getCurrentTabId(),
+  } = payload;
 
   const hash = getMediaHash(media, 'download');
   if (!hash) return undefined;
@@ -741,6 +743,7 @@ addActionHandler('downloadMedia', (global, actions, payload): ActionReturnType =
     filename: getMediaFilename(media),
     originChatId: originMessage?.chatId,
     originMessageId: originMessage?.id,
+    shouldAskPath,
   } satisfies ActiveDownloads[string];
 
   return addActiveMediaDownload(global, hash, metadata, tabId);

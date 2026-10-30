@@ -17,6 +17,7 @@ import {
   selectPeerHasProfileBackground, selectTabState,
 } from '../../global/selectors';
 import { selectSharedSettings } from '../../global/selectors/sharedState';
+import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import {
   IS_APP, IS_FIREFOX, IS_MAC_OS, IS_TOUCH_ENV,
 } from '../../util/browser/windowEnvironment';
@@ -496,7 +497,8 @@ function LeftColumn({
       'Mod+0': handleHotkeySavedMessages,
       'Mod+9': handleArchivedChats,
     }),
-    ...(IS_MAC_OS && IS_APP && { 'Mod+,': handleHotkeySettings }),
+    // Telegram Desktop opens settings with Ctrl+, on every platform
+    ...((IS_MAC_OS || IS_TAURI) && IS_APP && { 'Mod+,': handleHotkeySettings }),
   }), []));
 
   useEffect(() => {

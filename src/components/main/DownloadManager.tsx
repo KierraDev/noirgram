@@ -5,6 +5,7 @@ import type { TabState } from '../../global/types';
 import { ApiMediaFormat } from '../../api/types';
 
 import { selectTabState } from '../../global/selectors';
+import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import { IS_OPFS_SUPPORTED, IS_SERVICE_WORKER_SUPPORTED, MAX_BUFFER_SIZE } from '../../util/browser/windowEnvironment';
 import download from '../../util/download';
 import generateUniqueId from '../../util/generateUniqueId';
@@ -51,12 +52,14 @@ const DownloadManager = ({
       }
       processedHashes.add(mediaHash);
 
-      const { size, filename, format: mediaFormat } = metadata;
+      const {
+        size, filename, format: mediaFormat, shouldAskPath,
+      } = metadata;
 
       const mediaData = mediaLoader.getFromMemory(mediaHash);
 
       if (mediaData) {
-        download(mediaData, filename);
+        download(mediaData, filename, shouldAskPath);
         handleMediaDownloaded(mediaHash);
         return;
       }
@@ -80,6 +83,15 @@ const DownloadManager = ({
         if (mediaFormat === ApiMediaFormat.DownloadUrl) {
           const url = new URL(result, window.document.baseURI);
           url.searchParams.set('filename', encodeURIComponent(filename));
+
+          // A popup would be a separate browser window outside of the desktop download handling.
+          // The Service Worker streams this URL to the download in the app window just as well.
+          if (IS_TAURI) {
+            download(url.toString(), filename, shouldAskPath);
+            handleMediaDownloaded(mediaHash);
+            return;
+          }
+
           const downloadWindow = window.open(url.toString());
 
           downloadWindow?.addEventListener('beforeunload', () => {
@@ -88,7 +100,7 @@ const DownloadManager = ({
             });
           }, { once: true });
         } else if (result) {
-          download(result, filename);
+          download(result, filename, shouldAskPath);
         }
 
         handleMediaDownloaded(mediaHash);

@@ -690,8 +690,10 @@ async fn prepare_download(
   window: tauri::WebviewWindow,
   url: String,
   filename: String,
+  should_ask: Option<bool>,
 ) -> Result<bool, String> {
-  if !read_download_settings().should_ask {
+  // `should_ask` is "Save as…" from a context menu, which always asks
+  if !should_ask.unwrap_or(false) && !read_download_settings().should_ask {
     return Ok(true);
   }
 
