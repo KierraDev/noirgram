@@ -13,6 +13,8 @@ use uuid::Uuid;
 mod deeplink;
 use deeplink::Deeplink;
 
+mod desktop;
+
 mod tray;
 mod window;
 use crate::window::{WINDOW_STATES, WindowState};
@@ -60,15 +62,6 @@ pub static TRAFFIC_LIGHT_POSITION_OVERLAY_MOBILE: LazyLock<LogicalPosition<f64>>
   }
   TRAFFIC_LIGHT_POSITION_OVERLAY_MOBILE_LEGACY
 });
-
-// Every webview shares one WebView2 environment, so all windows must use the same arguments.
-// Tauri's default `--disable-features` list is kept, GPU raster is forced on, and background
-// throttling is off so the MTProto connection and timers stay alive while the window is hidden to tray.
-const BROWSER_ARGS: &str = "--autoplay-policy=no-user-gesture-required \
-  --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,CalculateNativeWinOcclusion \
-  --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
-  --disable-background-timer-throttling --disable-renderer-backgrounding \
-  --disable-backgrounding-occluded-windows";
 
 const MINI_APP_LABEL_PREFIX: &str = "miniapp-";
 const MINI_APP_BRIDGE_SCRIPT: &str = include_str!("mini_app_bridge.js");
@@ -124,10 +117,21 @@ pub const DEFAULT_WINDOW_TITLE: &str = match std::option_env!("APP_TITLE") {
   None => "Noirgram",
 };
 
-pub const BASE_URL: &str = match std::option_env!("BASE_URL") {
-  Some(url) => url,
-  None => "http://localhost:1234",
-};
+// Release builds serve the bundled frontend from a local HTTP server inside the app: Service Workers
+// (media streaming, progressive downloads) need an http(s) origin. The port is fixed because it is
+// part of the origin that keeps the Telegram session in IndexedDB.
+const LOCAL_SERVER_PORT: u16 = 47833;
+const DEV_SERVER_URL: &str = "http://localhost:1234";
+
+pub static BASE_URL: LazyLock<String> = LazyLock::new(|| match std::option_env!("BASE_URL") {
+  Some(url) => url.to_string(),
+  None if tauri::is_dev() => DEV_SERVER_URL.to_string(),
+  None => format!("http://localhost:{LOCAL_SERVER_PORT}"),
+});
+
+fn should_serve_bundled_frontend() -> bool {
+  std::option_env!("BASE_URL").is_none() && !tauri::is_dev()
+}
 
 pub const WITH_UPDATER: &str = match std::option_env!("WITH_UPDATER") {
   Some(str) => str,
@@ -157,12 +161,24 @@ pub(crate) fn save_window_url(app: &tauri::AppHandle, window_label: &str) {
 pub fn run() {
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-      let active_windows = app.windows();
-      if active_windows.len() >= 1 {
-        let window = active_windows.values().next().unwrap();
-        window.set_focus().unwrap_or_default();
-      } else {
-        open_new_window(app.clone(), BASE_URL.to_string()).unwrap();
+      // Launching the app again brings the existing window back, even from the tray
+      let app_window = app
+        .webview_windows()
+        .into_iter()
+        .find(|(label, _)| !is_mini_app_label(label))
+        .map(|(_, window)| window);
+
+      match app_window {
+        Some(window) => {
+          window.unminimize().unwrap_or_default();
+          window.show().unwrap_or_default();
+          window.set_focus().unwrap_or_default();
+        }
+        None => {
+          if let Err(err) = open_new_window(app.clone(), LAST_URL.lock().map(|url| url.clone()).unwrap_or_default()) {
+            log::error!("Failed to open window: {err}");
+          }
+        }
       }
     }))
     .plugin(tauri_plugin_os::init())
@@ -170,10 +186,28 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_notification::init())
     .plugin(tauri_plugin_log::Builder::default().build())
-    .plugin(tauri_plugin_window_state::Builder::default().build())
+    // Visibility is ours (start minimized to tray), decorations are drawn by the web app
+    .plugin(
+      tauri_plugin_window_state::Builder::default()
+        .with_state_flags(
+          tauri_plugin_window_state::StateFlags::all()
+            .difference(tauri_plugin_window_state::StateFlags::VISIBLE | tauri_plugin_window_state::StateFlags::DECORATIONS),
+        )
+        .build(),
+    )
     .plugin(tauri_plugin_deep_link::init())
     .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_autostart::init(
+      tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+      Some(vec![desktop::MINIMIZED_ARG]),
+    ))
     .plugin(tauri_plugin_process::init());
+
+  let app = if should_serve_bundled_frontend() {
+    app.plugin(tauri_plugin_localhost::Builder::new(LOCAL_SERVER_PORT).build())
+  } else {
+    app
+  };
 
   let app = app.on_window_event(|window, event| match event {
     tauri::WindowEvent::CloseRequested { api, .. } => {
@@ -191,6 +225,13 @@ pub fn run() {
       if app_windows_count == 1 {
         // Save current URL before hiding the last window
         save_window_url(&window.app_handle(), window.label());
+
+        // "Close to tray" is off: closing the last window quits, mini app windows included
+        if !desktop::read().should_close_to_tray {
+          api.prevent_close();
+          window.app_handle().exit(0);
+          return;
+        }
 
         #[cfg(target_os = "macos")]
         window.app_handle().hide().unwrap_or_default();
@@ -250,9 +291,15 @@ pub fn run() {
     if let Ok(mut settings) = DOWNLOAD_SETTINGS.lock() {
       *settings = load_download_settings(app.handle());
     }
+    // Before the first window: the proxy is part of the WebView2 environment
+    desktop::init(app.handle());
 
-    let _main_window = open_new_window(app.handle().clone(), BASE_URL.to_string())
-      .expect("Failed to open main window");
+    let _main_window = open_window(
+      app.handle().clone(),
+      BASE_URL.to_string(),
+      !desktop::should_start_minimized(),
+    )
+    .expect("Failed to open main window");
 
     let deeplink = Deeplink::init();
     if let Err(err) = deeplink.setup(app.handle()) {
@@ -284,6 +331,10 @@ pub fn run() {
     reset_download_directory,
     set_download_should_ask,
     prepare_download,
+    desktop::get_desktop_settings,
+    desktop::set_close_to_tray,
+    desktop::set_launch_at_startup,
+    desktop::set_proxy,
     open_mini_app_window,
     close_mini_app_window,
     mini_app_send_event,
@@ -413,20 +464,30 @@ pub(crate) fn open_new_window(
   app: tauri::AppHandle,
   url: String,
 ) -> Result<tauri::WebviewWindow, String> {
-  let base_url = Url::parse(BASE_URL).map_err(|err| format!("Invalid base URL: {err}"))?;
+  open_window(app, url, true)
+}
+
+fn open_window(
+  app: tauri::AppHandle,
+  url: String,
+  is_visible: bool,
+) -> Result<tauri::WebviewWindow, String> {
+  let base_url = Url::parse(&BASE_URL).map_err(|err| format!("Invalid base URL: {err}"))?;
   let url = resolve_app_url(&url, &base_url).ok_or_else(|| format!("Disallowed app URL: {url}"))?;
   let window_label = Uuid::new_v4().to_string();
-  let new_window_builder = tauri::WebviewWindowBuilder::new(
-    &app,
-    window_label.clone(),
-    tauri::WebviewUrl::App(url.to_string().into()),
-  )
-  .additional_browser_args(BROWSER_ARGS)
+  let webview_url = if should_serve_bundled_frontend() {
+    tauri::WebviewUrl::External(url)
+  } else {
+    tauri::WebviewUrl::App(url.to_string().into())
+  };
+  let new_window_builder = tauri::WebviewWindowBuilder::new(&app, window_label.clone(), webview_url)
+  .additional_browser_args(desktop::get_browser_args())
   .fullscreen(false)
   .resizable(true)
   .title(DEFAULT_WINDOW_TITLE)
   .inner_size(WINDOW_WIDTH, WINDOW_HEIGHT)
   .min_inner_size(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
+  .visible(is_visible)
   .disable_drag_drop_handler() // Required for Drag & Drop on Windows
   .initialization_script(&format!(
     "window.tauri = {{ version: '{}' }};",
@@ -799,7 +860,8 @@ async fn open_mini_app_window(
   }
 
   let url = Url::parse(&url).map_err(|err| err.to_string())?;
-  if !matches!(url.scheme(), "http" | "https") {
+  let base_url = Url::parse(&BASE_URL).map_err(|err| err.to_string())?;
+  if !matches!(url.scheme(), "http" | "https") || url.origin() == base_url.origin() {
     return Err("Unsupported mini app URL".into());
   }
 
@@ -814,9 +876,13 @@ async fn open_mini_app_window(
     .resizable(true)
     .center()
     .theme(Some(tauri::Theme::Dark))
-    .additional_browser_args(BROWSER_ARGS)
+    .additional_browser_args(desktop::get_browser_args())
     .initialization_script(MINI_APP_BRIDGE_SCRIPT)
-    .on_navigation(|url| matches!(url.scheme(), "http" | "https"))
+    // Never let a mini app page into the app origin, which has the app's permissions
+    .on_navigation(|url| {
+      matches!(url.scheme(), "http" | "https")
+        && Url::parse(&BASE_URL).map_or(true, |base_url| url.origin() != base_url.origin())
+    })
     .build();
 
   if let Err(err) = result {

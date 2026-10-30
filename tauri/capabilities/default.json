@@ -2,6 +2,9 @@
   "identifier": "default",
   "description": "Permissions available to Noirgram app content",
   "local": true,
+  "remote": {
+    "urls": ["http://localhost:47833/*"]
+  },
   "webviews": ["*"],
   "permissions": [
     "allow-mark-title-bar-overlay",
@@ -17,6 +20,10 @@
     "allow-reset-download-directory",
     "allow-set-download-should-ask",
     "allow-prepare-download",
+    "allow-get-desktop-settings",
+    "allow-set-close-to-tray",
+    "allow-set-launch-at-startup",
+    "allow-set-proxy",
     "allow-open-mini-app-window",
     "allow-close-mini-app-window",
     "allow-mini-app-send-event",

@@ -7,6 +7,23 @@ export type TauriDownloadSettings = {
   shouldAsk: boolean;
 };
 
+export type TauriProxyKind = 'socks5' | 'http';
+
+export type TauriProxySettings = {
+  isEnabled: boolean;
+  kind: TauriProxyKind;
+  host: string;
+  port: number;
+};
+
+export type TauriDesktopSettings = {
+  shouldCloseToTray: boolean;
+  shouldLaunchAtStartup: boolean;
+  proxy?: TauriProxySettings;
+  // Proxy URL the running app was started with; proxy changes apply after a restart
+  activeProxy?: string;
+};
+
 type TauriApi = {
   version: string;
   markTitleBarOverlay: (isOverlay: boolean, isMobile?: boolean) => Promise<void>;
@@ -23,6 +40,10 @@ type TauriApi = {
   resetDownloadDirectory: () => Promise<TauriDownloadSettings>;
   setDownloadShouldAsk: (shouldAsk: boolean) => Promise<TauriDownloadSettings>;
   prepareDownload: (url: string, filename: string) => Promise<boolean>;
+  getDesktopSettings: () => Promise<TauriDesktopSettings>;
+  setCloseToTray: (shouldCloseToTray: boolean) => Promise<TauriDesktopSettings>;
+  setLaunchAtStartup: (shouldLaunchAtStartup: boolean) => Promise<TauriDesktopSettings>;
+  setProxy: (proxy?: TauriProxySettings) => Promise<TauriDesktopSettings>;
   openMiniAppWindow: (label: string, url: string, title: string) => Promise<void>;
   closeMiniAppWindow: (label: string) => Promise<void>;
   sendMiniAppEvent: (label: string, eventType: string, eventData?: unknown) => Promise<void>;

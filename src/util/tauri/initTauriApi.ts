@@ -1,4 +1,4 @@
-import type { TauriDownloadSettings } from '../../types/tauri';
+import type { TauriDesktopSettings, TauriDownloadSettings, TauriProxySettings } from '../../types/tauri';
 
 import { IS_MAC_OS } from '../browser/windowEnvironment';
 
@@ -62,6 +62,39 @@ export default function initTauriApi() {
     return core.invoke<boolean>('prepare_download', { url, filename });
   }
 
+  // Rust `None` arrives as `null`
+  function normalizeDesktopSettings(settings: TauriDesktopSettings) {
+    return {
+      ...settings,
+      proxy: settings.proxy || undefined,
+      activeProxy: settings.activeProxy || undefined,
+    };
+  }
+
+  async function getDesktopSettings() {
+    const core = await corePromise;
+    return normalizeDesktopSettings(await core.invoke<TauriDesktopSettings>('get_desktop_settings'));
+  }
+
+  async function setCloseToTray(shouldCloseToTray: boolean) {
+    const core = await corePromise;
+    return normalizeDesktopSettings(
+      await core.invoke<TauriDesktopSettings>('set_close_to_tray', { shouldCloseToTray }),
+    );
+  }
+
+  async function setLaunchAtStartup(shouldLaunchAtStartup: boolean) {
+    const core = await corePromise;
+    return normalizeDesktopSettings(
+      await core.invoke<TauriDesktopSettings>('set_launch_at_startup', { shouldLaunchAtStartup }),
+    );
+  }
+
+  async function setProxy(proxy?: TauriProxySettings) {
+    const core = await corePromise;
+    return normalizeDesktopSettings(await core.invoke<TauriDesktopSettings>('set_proxy', { proxy }));
+  }
+
   async function openMiniAppWindow(label: string, url: string, title: string) {
     const core = await corePromise;
     return core.invoke<void>('open_mini_app_window', { label, url, title });
@@ -90,6 +123,10 @@ export default function initTauriApi() {
     resetDownloadDirectory,
     setDownloadShouldAsk,
     prepareDownload,
+    getDesktopSettings,
+    setCloseToTray,
+    setLaunchAtStartup,
+    setProxy,
     openMiniAppWindow,
     closeMiniAppWindow,
     sendMiniAppEvent,
