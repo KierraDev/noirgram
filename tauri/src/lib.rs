@@ -1,10 +1,12 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{Emitter, LogicalPosition, Manager, webview::DownloadEvent};
+use tauri_plugin_dialog::DialogExt;
 use url::Url;
 use uuid::Uuid;
 
@@ -71,10 +73,38 @@ const BROWSER_ARGS: &str = "--autoplay-policy=no-user-gesture-required \
 const MINI_APP_LABEL_PREFIX: &str = "miniapp-";
 const MINI_APP_BRIDGE_SCRIPT: &str = include_str!("mini_app_bridge.js");
 const DOWNLOADS_SUBDIRECTORY: &str = "Noirgram";
+const DOWNLOAD_SETTINGS_FILE: &str = "download-settings.json";
 
 // Mini app window label -> label of the app window that opened it
 static MINI_APP_OWNERS: LazyLock<Mutex<HashMap<String, String>>> =
   LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct DownloadSettings {
+  // `None` means `Downloads/Noirgram`
+  directory: Option<PathBuf>,
+  should_ask: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DownloadSettingsInfo {
+  directory: String,
+  is_default: bool,
+  should_ask: bool,
+}
+
+static DOWNLOAD_SETTINGS: LazyLock<Mutex<DownloadSettings>> =
+  LazyLock::new(|| Mutex::new(DownloadSettings::default()));
+
+// Download URL -> path the user picked in the "Save as" dialog right before starting it
+static PENDING_DOWNLOAD_PATHS: LazyLock<Mutex<HashMap<String, PathBuf>>> =
+  LazyLock::new(|| Mutex::new(HashMap::new()));
+
+// Files saved during this run; only these (and files in the downloads folder) can be revealed
+static SAVED_DOWNLOADS: LazyLock<Mutex<HashSet<PathBuf>>> =
+  LazyLock::new(|| Mutex::new(HashSet::new()));
 
 pub const WINDOW_WIDTH: f64 = 1088.0;
 pub const WINDOW_HEIGHT: f64 = 700.0;
@@ -142,6 +172,7 @@ pub fn run() {
     .plugin(tauri_plugin_log::Builder::default().build())
     .plugin(tauri_plugin_window_state::Builder::default().build())
     .plugin(tauri_plugin_deep_link::init())
+    .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_process::init());
 
   let app = app.on_window_event(|window, event| match event {
@@ -216,6 +247,10 @@ pub fn run() {
     // Manage app state
     app.manage(AppState::new(AppStateStruct::default()));
 
+    if let Ok(mut settings) = DOWNLOAD_SETTINGS.lock() {
+      *settings = load_download_settings(app.handle());
+    }
+
     let _main_window = open_new_window(app.handle().clone(), BASE_URL.to_string())
       .expect("Failed to open main window");
 
@@ -244,6 +279,11 @@ pub fn run() {
     set_menu_translations,
     reveal_download,
     open_downloads_folder,
+    get_download_settings,
+    choose_download_directory,
+    reset_download_directory,
+    set_download_should_ask,
+    prepare_download,
     open_mini_app_window,
     close_mini_app_window,
     mini_app_send_event,
@@ -395,9 +435,17 @@ pub(crate) fn open_new_window(
   .on_navigation(move |url| is_allowed_app_url(url, &base_url))
   .on_download(|window, event| {
     match event {
-      // Saved silently into `Downloads/Noirgram`; the web app shows where the file went
-      DownloadEvent::Requested { destination, .. } => {
-        if let (Some(filename), Some(downloads_dir)) = (
+      // Saved silently into the downloads folder (or where the user picked in `prepare_download`);
+      // the web app shows where the file went
+      DownloadEvent::Requested { url, destination } => {
+        let picked_path = PENDING_DOWNLOAD_PATHS
+          .lock()
+          .ok()
+          .and_then(|mut paths| paths.remove(url.as_str()));
+
+        if let Some(picked_path) = picked_path {
+          *destination = picked_path;
+        } else if let (Some(filename), Some(downloads_dir)) = (
           destination.file_name().map(|name| name.to_os_string()),
           get_downloads_dir(window.app_handle()),
         ) {
@@ -407,6 +455,12 @@ pub(crate) fn open_new_window(
         }
       }
       DownloadEvent::Finished { url, path, success } => {
+        if let Some(saved_path) = path.as_ref().filter(|_| success).and_then(|path| path.canonicalize().ok()) {
+          if let Ok(mut saved) = SAVED_DOWNLOADS.lock() {
+            saved.insert(saved_path);
+          }
+        }
+
         window
           .emit_to(
             window.label(),
@@ -463,12 +517,149 @@ pub(crate) fn open_new_window(
   Ok(window)
 }
 
-fn get_downloads_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
+fn get_default_downloads_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
   app
     .path()
     .download_dir()
     .ok()
     .map(|dir| dir.join(DOWNLOADS_SUBDIRECTORY))
+}
+
+fn read_download_settings() -> DownloadSettings {
+  DOWNLOAD_SETTINGS
+    .lock()
+    .map(|settings| settings.clone())
+    .unwrap_or_default()
+}
+
+// A custom folder that disappeared (unplugged drive, deleted) falls back to the default one
+fn get_downloads_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
+  read_download_settings()
+    .directory
+    .filter(|dir| dir.is_dir())
+    .or_else(|| get_default_downloads_dir(app))
+}
+
+fn get_download_settings_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+  app
+    .path()
+    .app_config_dir()
+    .ok()
+    .map(|dir| dir.join(DOWNLOAD_SETTINGS_FILE))
+}
+
+fn load_download_settings(app: &tauri::AppHandle) -> DownloadSettings {
+  get_download_settings_path(app)
+    .and_then(|path| std::fs::read(path).ok())
+    .and_then(|data| serde_json::from_slice(&data).ok())
+    .unwrap_or_default()
+}
+
+fn update_download_settings(
+  app: &tauri::AppHandle,
+  update: impl FnOnce(&mut DownloadSettings),
+) -> Result<DownloadSettingsInfo, String> {
+  let settings = {
+    let mut settings = DOWNLOAD_SETTINGS.lock().map_err(|err| err.to_string())?;
+    update(&mut settings);
+    settings.clone()
+  };
+
+  let path = get_download_settings_path(app).ok_or("Config folder is unavailable")?;
+  if let Some(dir) = path.parent() {
+    std::fs::create_dir_all(dir).map_err(|err| err.to_string())?;
+  }
+  let data = serde_json::to_vec_pretty(&settings).map_err(|err| err.to_string())?;
+  std::fs::write(path, data).map_err(|err| err.to_string())?;
+
+  Ok(get_download_settings_info(app))
+}
+
+fn get_download_settings_info(app: &tauri::AppHandle) -> DownloadSettingsInfo {
+  let settings = read_download_settings();
+  let directory = get_downloads_dir(app).unwrap_or_default();
+
+  DownloadSettingsInfo {
+    is_default: get_default_downloads_dir(app).as_ref() == Some(&directory),
+    directory: directory.to_string_lossy().into_owned(),
+    should_ask: settings.should_ask,
+  }
+}
+
+#[tauri::command]
+fn get_download_settings(app: tauri::AppHandle) -> DownloadSettingsInfo {
+  get_download_settings_info(&app)
+}
+
+// Dialogs block, so these commands are async and run off the main thread
+#[tauri::command]
+async fn choose_download_directory(
+  app: tauri::AppHandle,
+  window: tauri::WebviewWindow,
+) -> Result<Option<DownloadSettingsInfo>, String> {
+  let mut dialog = app.dialog().file().set_parent(&window);
+  if let Some(dir) = get_downloads_dir(&app).filter(|dir| dir.is_dir()) {
+    dialog = dialog.set_directory(dir);
+  }
+
+  let Some(directory) = dialog.blocking_pick_folder() else {
+    return Ok(None);
+  };
+  let directory = directory.into_path().map_err(|err| err.to_string())?;
+
+  update_download_settings(&app, |settings| settings.directory = Some(directory)).map(Some)
+}
+
+#[tauri::command]
+fn reset_download_directory(app: tauri::AppHandle) -> Result<DownloadSettingsInfo, String> {
+  update_download_settings(&app, |settings| settings.directory = None)
+}
+
+#[tauri::command]
+fn set_download_should_ask(app: tauri::AppHandle, should_ask: bool) -> Result<DownloadSettingsInfo, String> {
+  update_download_settings(&app, |settings| settings.should_ask = should_ask)
+}
+
+// Called by the web app right before it starts a download. With "Ask where to save" on, shows the
+// "Save as" dialog like Telegram Desktop does and remembers the pick for `DownloadEvent::Requested`.
+// Returns `false` when the user cancels.
+#[tauri::command]
+async fn prepare_download(
+  app: tauri::AppHandle,
+  window: tauri::WebviewWindow,
+  url: String,
+  filename: String,
+) -> Result<bool, String> {
+  if !read_download_settings().should_ask {
+    return Ok(true);
+  }
+
+  let url = Url::parse(&url).map_err(|err| err.to_string())?;
+  let filename = Path::new(&filename)
+    .file_name()
+    .map(|name| name.to_string_lossy().into_owned())
+    .unwrap_or_default();
+
+  let mut dialog = app.dialog().file().set_parent(&window).set_file_name(&filename);
+  if let Some(extension) = Path::new(&filename).extension().and_then(OsStr::to_str) {
+    dialog = dialog.add_filter(extension.to_uppercase(), &[extension]);
+  }
+  if let Some(dir) = get_downloads_dir(&app) {
+    if std::fs::create_dir_all(&dir).is_ok() {
+      dialog = dialog.set_directory(dir);
+    }
+  }
+
+  let Some(path) = dialog.blocking_save_file() else {
+    return Ok(false);
+  };
+  let path = path.into_path().map_err(|err| err.to_string())?;
+
+  if let Ok(mut paths) = PENDING_DOWNLOAD_PATHS.lock() {
+    paths.insert(url.to_string(), path);
+  }
+
+  Ok(true)
 }
 
 // `photo.jpg` -> `photo (1).jpg` when the name is taken, like browsers do
@@ -540,12 +731,16 @@ fn open_in_file_manager(path: &Path, should_select: bool) -> Result<(), String> 
 // Only files that we saved ourselves can be revealed, never arbitrary paths from the web app
 #[tauri::command]
 fn reveal_download(app: tauri::AppHandle, path: String) -> Result<(), String> {
-  let downloads_dir = get_downloads_dir(&app)
-    .and_then(|dir| dir.canonicalize().ok())
-    .ok_or("Downloads folder is unavailable")?;
   let path = Path::new(&path).canonicalize().map_err(|err| err.to_string())?;
+  let is_saved_by_us = SAVED_DOWNLOADS
+    .lock()
+    .map(|saved| saved.contains(&path))
+    .unwrap_or(false);
+  let is_in_downloads_dir = get_downloads_dir(&app)
+    .and_then(|dir| dir.canonicalize().ok())
+    .is_some_and(|dir| path.starts_with(dir));
 
-  if !path.starts_with(&downloads_dir) {
+  if !is_saved_by_us && !is_in_downloads_dir {
     return Err("Path is outside of the downloads folder".into());
   }
 

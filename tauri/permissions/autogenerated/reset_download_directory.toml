@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-reset-download-directory"
+description = "Enables the reset_download_directory command without any pre-configured scope."
+commands.allow = ["reset_download_directory"]
+
+[[permission]]
+identifier = "deny-reset-download-directory"
+description = "Denies the reset_download_directory command without any pre-configured scope."
+commands.deny = ["reset_download_directory"]

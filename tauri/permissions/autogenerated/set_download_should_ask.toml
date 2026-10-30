@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-download-should-ask"
+description = "Enables the set_download_should_ask command without any pre-configured scope."
+commands.allow = ["set_download_should_ask"]
+
+[[permission]]
+identifier = "deny-set-download-should-ask"
+description = "Denies the set_download_should_ask command without any pre-configured scope."
+commands.deny = ["set_download_should_ask"]

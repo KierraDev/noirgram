@@ -4534,8 +4534,12 @@
 "NoirgramPrivacyDesc" = "Read receipts and online status still follow your Telegram privacy settings.";
 "NoirgramSectionDownloads" = "Downloads";
 "NoirgramOpenDownloads" = "Open downloads folder";
-"NoirgramDownloadsDesc" = "Files you download are saved to Downloads › Noirgram.";
-"NoirgramDownloadSaved" = "{file} saved to Downloads › Noirgram";
+"NoirgramDownloadsDesc" = "Files are saved straight to this folder. Turn on asking to pick a place for every file.";
+"NoirgramDownloadSaved" = "{file} saved";
+"NoirgramDownloadFolder" = "Download folder";
+"NoirgramDownloadFolderReset" = "Use default folder";
+"NoirgramDownloadAsk" = "Ask where to save each file";
+"NoirgramDownloadAskDesc" = "Show the “Save as” dialog before every download";
 "NoirgramShowInFolder" = "Show in folder";
 "NoirgramMiniAppInWindow" = "This mini app is open in its own window";
 "NoirgramMiniAppShowWindow" = "Show window";

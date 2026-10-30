@@ -1,3 +1,4 @@
+import { IS_TAURI } from './browser/globalEnvironment';
 import { pause } from './schedulers';
 
 type PendingDownload = {
@@ -26,7 +27,7 @@ export default function download(url: string, filename: string) {
 async function processQueue() {
   let count = 0;
   for (const pendingDownload of pendingDownloads) {
-    downloadOne(pendingDownload);
+    await downloadOne(pendingDownload);
     count++;
     if (count === LIMIT_PER_BATCH) {
       await pause(BATCH_INTERVAL);
@@ -36,7 +37,10 @@ async function processQueue() {
   pendingDownloads = [];
 }
 
-function downloadOne({ url, filename }: PendingDownload) {
+async function downloadOne({ url, filename }: PendingDownload) {
+  // The desktop app may show a "Save as" dialog first; the download is skipped when it is cancelled
+  if (IS_TAURI && !await prepareTauriDownload(url, filename)) return;
+
   const link = document.createElement('a');
   link.href = url;
   link.target = '_blank';
@@ -47,5 +51,13 @@ function downloadOne({ url, filename }: PendingDownload) {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err); // Suppress redundant "Blob loading failed" error popup on IOS
+  }
+}
+
+async function prepareTauriDownload(url: string, filename: string) {
+  try {
+    return await window.tauri.prepareDownload(new URL(url, window.location.href).href, filename);
+  } catch {
+    return true;
   }
 }

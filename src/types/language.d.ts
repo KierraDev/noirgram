@@ -3400,6 +3400,10 @@ export interface LangPair {
   'NoirgramSectionDownloads': undefined;
   'NoirgramOpenDownloads': undefined;
   'NoirgramDownloadsDesc': undefined;
+  'NoirgramDownloadFolder': undefined;
+  'NoirgramDownloadFolderReset': undefined;
+  'NoirgramDownloadAsk': undefined;
+  'NoirgramDownloadAskDesc': undefined;
   'NoirgramShowInFolder': undefined;
   'NoirgramMiniAppInWindow': undefined;
   'NoirgramMiniAppShowWindow': undefined;

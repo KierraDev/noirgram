@@ -1,3 +1,5 @@
+import type { TauriDownloadSettings } from '../../types/tauri';
+
 import { IS_MAC_OS } from '../browser/windowEnvironment';
 
 export default function initTauriApi() {
@@ -33,6 +35,33 @@ export default function initTauriApi() {
     return core.invoke<void>('open_downloads_folder');
   }
 
+  async function getDownloadSettings() {
+    const core = await corePromise;
+    return core.invoke<TauriDownloadSettings>('get_download_settings');
+  }
+
+  async function chooseDownloadDirectory() {
+    const core = await corePromise;
+    // Rust `None` arrives as `null` when the folder picker is cancelled
+    const result = await core.invoke<TauriDownloadSettings | undefined>('choose_download_directory');
+    return result || undefined;
+  }
+
+  async function resetDownloadDirectory() {
+    const core = await corePromise;
+    return core.invoke<TauriDownloadSettings>('reset_download_directory');
+  }
+
+  async function setDownloadShouldAsk(shouldAsk: boolean) {
+    const core = await corePromise;
+    return core.invoke<TauriDownloadSettings>('set_download_should_ask', { shouldAsk });
+  }
+
+  async function prepareDownload(url: string, filename: string) {
+    const core = await corePromise;
+    return core.invoke<boolean>('prepare_download', { url, filename });
+  }
+
   async function openMiniAppWindow(label: string, url: string, title: string) {
     const core = await corePromise;
     return core.invoke<void>('open_mini_app_window', { label, url, title });
@@ -56,6 +85,11 @@ export default function initTauriApi() {
     openNewWindow,
     revealDownload,
     openDownloadsFolder,
+    getDownloadSettings,
+    chooseDownloadDirectory,
+    resetDownloadDirectory,
+    setDownloadShouldAsk,
+    prepareDownload,
     openMiniAppWindow,
     closeMiniAppWindow,
     sendMiniAppEvent,

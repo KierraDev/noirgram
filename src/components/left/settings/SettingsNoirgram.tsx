@@ -1,7 +1,8 @@
-import { memo, useMemo } from '../../../lib/teact/teact';
+import { memo, useEffect, useMemo, useState } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
 import type { NoirgramAvatarShape, NoirgramSettings } from '../../../global/types/sharedState';
+import type { TauriDownloadSettings } from '../../../types/tauri';
 import type { IRadioOption } from '../../ui/RadioGroup';
 
 import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
@@ -32,6 +33,13 @@ const SettingsNoirgram = ({
 
   const lang = useLang();
   const settings = useSelector(selectNoirgramSettings);
+  // Kept by the desktop shell, which applies them to every download
+  const [downloadSettings, setDownloadSettings] = useState<TauriDownloadSettings | undefined>();
+
+  useEffect(() => {
+    if (!IS_TAURI || !isActive) return;
+    window.tauri.getDownloadSettings().then(setDownloadSettings).catch(() => undefined);
+  }, [isActive]);
 
   useHistoryBack({
     isActive,
@@ -54,6 +62,21 @@ const SettingsNoirgram = ({
 
   const handleOpenDownloads = useLastCallback(() => {
     openDownloadsFolder();
+  });
+
+  const handleChooseDownloadFolder = useLastCallback(async () => {
+    const newSettings = await window.tauri.chooseDownloadDirectory().catch(() => undefined);
+    if (newSettings) setDownloadSettings(newSettings);
+  });
+
+  const handleResetDownloadFolder = useLastCallback(async () => {
+    const newSettings = await window.tauri.resetDownloadDirectory().catch(() => undefined);
+    if (newSettings) setDownloadSettings(newSettings);
+  });
+
+  const handleDownloadAskToggle = useLastCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSettings = await window.tauri.setDownloadShouldAsk(e.target.checked).catch(() => undefined);
+    if (newSettings) setDownloadSettings(newSettings);
   });
 
   function renderToggle(key: ToggleKey, label: string, subLabel: string) {
@@ -105,7 +128,25 @@ const SettingsNoirgram = ({
         <>
           <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionDownloads')}</IslandTitle>
           <Island>
-            <ListItem icon="folder" narrow onClick={handleOpenDownloads}>
+            <ListItem icon="folder" multiline onClick={handleChooseDownloadFolder}>
+              <span className="title">{lang('NoirgramDownloadFolder')}</span>
+              <span className="subtitle" dir="auto">{downloadSettings?.directory}</span>
+            </ListItem>
+            {downloadSettings && !downloadSettings.isDefault && (
+              <ListItem icon="undo" narrow onClick={handleResetDownloadFolder}>
+                {lang('NoirgramDownloadFolderReset')}
+              </ListItem>
+            )}
+            <div className="ListItem with-checkbox">
+              <Checkbox
+                label={lang('NoirgramDownloadAsk')}
+                subLabel={lang('NoirgramDownloadAskDesc')}
+                checked={Boolean(downloadSettings?.shouldAsk)}
+                disabled={!downloadSettings}
+                onChange={handleDownloadAskToggle}
+              />
+            </div>
+            <ListItem icon="download" narrow onClick={handleOpenDownloads}>
               {lang('NoirgramOpenDownloads')}
             </ListItem>
           </Island>
