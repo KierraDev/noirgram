@@ -182,6 +182,7 @@ import {
   selectWebPage,
 } from '../../selectors';
 import { makeTrackKeyFromItem, selectPlaybackMedia } from '../../selectors/audioPlayer';
+import { selectNoirgramSettings } from '../../selectors/sharedState';
 import {
   selectDraft,
   selectEditingId,
@@ -1630,6 +1631,8 @@ addActionHandler('sendMessageAction', async (global, actions, payload): Promise<
   const { action, chatId, threadId } = payload;
   if (global.connectionState !== 'connectionStateReady') return;
   if (selectIsChatWithSelf(global, chatId)) return;
+  // Noirgram ghost typing: never tell others that we are typing or recording
+  if (selectNoirgramSettings(global).shouldHideTypingStatus) return;
 
   const chat = selectChat(global, chatId)!;
   if (!chat || chat.isMonoforum) return;

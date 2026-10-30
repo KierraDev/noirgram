@@ -1,0 +1,11 @@
+{
+  "identifier": "mini-app",
+  "description": "Bridge for mini apps opened in their own windows: they may only post events to the app window that opened them",
+  "windows": ["miniapp-*"],
+  "remote": {
+    "urls": ["https://*/*", "http://*/*"]
+  },
+  "permissions": [
+    "allow-mini-app-post-event"
+  ]
+}

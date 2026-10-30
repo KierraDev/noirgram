@@ -24,12 +24,14 @@ import {
   selectUser,
   selectUserFullInfo,
 } from '../../../global/selectors';
+import { IS_TAURI } from '../../../util/browser/globalEnvironment';
 import { IFRAME_ALLOW_ATTRIBUTES, WEB_APP_SANDBOX_ATTRIBUTES } from '../../../util/browser/iframe';
 import { getGeolocationStatus, IS_GEOLOCATION_SUPPORTED } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import buildStyle from '../../../util/buildStyle.ts';
 import download from '../../../util/download';
 import { isLiteralObject } from '../../../util/iteratees';
+import { closeMiniAppWindow, getMiniAppWindowLabel, openMiniAppWindow } from '../../../util/tauri/miniAppWindows';
 import { extractCurrentThemeParams, FALLBACK_THEME_PARAMS, validateHexColor } from '../../../util/themeStyle';
 import { callApi } from '../../../api/gramjs';
 import { REM } from '../../common/helpers/mediaDimensions';
@@ -262,9 +264,48 @@ const WebAppTab = ({
   const isOpen = modal?.isModalOpen || false;
   const isSimple = Boolean(buttonText);
 
+  // On desktop, mini apps get their own native window like in Telegram Desktop
+  const nativeWindowLabel = IS_TAURI && webAppKey && url && !webApp?.isSameOrigin
+    ? getMiniAppWindowLabel(webAppKey)
+    : undefined;
+  const nativeWindowTitle = appName || bot?.firstName || '';
+
   const {
-    reloadFrame, sendEvent, sendFullScreenChanged, sendViewport, sendSafeArea, sendTheme,
-  } = useWebAppFrame(frameRef, isOpen, isFullscreen, isSimple, handleEvent, webApp, markLoaded);
+    reloadFrame, sendEvent, sendFullScreenChanged, sendViewport, sendSafeArea, sendTheme, handleInboundEvent,
+  } = useWebAppFrame(frameRef, isOpen, isFullscreen, isSimple, handleEvent, webApp, markLoaded, nativeWindowLabel);
+
+  const handleNativeWindowClose = useLastCallback(() => {
+    if (!webAppKey) return;
+    closeBrowserTab({ key: webAppKey, skipClosingConfirmation: true });
+  });
+
+  const showNativeWindow = useLastCallback(() => {
+    if (!nativeWindowLabel || !url) return;
+    void window.tauri.openMiniAppWindow(nativeWindowLabel, url, nativeWindowTitle);
+  });
+
+  const openNativeWindow = useLastCallback((label: string, windowUrl: string) => {
+    openMiniAppWindow(label, windowUrl, nativeWindowTitle, {
+      onEvent: handleInboundEvent,
+      onClose: handleNativeWindowClose,
+    }).then(() => {
+      changeBrowserModalState({ state: 'minimized' });
+    }).catch(() => {
+      showNotification({ message: { key: 'ErrorUnspecified' } });
+      handleNativeWindowClose();
+    });
+  });
+
+  // Only a new URL needs a new window; the title is read once on open
+  useEffect(() => {
+    if (!nativeWindowLabel || !url) return undefined;
+
+    openNativeWindow(nativeWindowLabel, url);
+
+    return () => {
+      closeMiniAppWindow(nativeWindowLabel);
+    };
+  }, [nativeWindowLabel, url, openNativeWindow]);
 
   useEffect(() => {
     if (isActive) registerSendEventCallback(sendEvent);
@@ -1241,21 +1282,32 @@ const WebAppTab = ({
       )}
     >
       {isFullscreen && getIsWebAppsFullscreenSupported() && renderFullscreenHeaderPanel()}
-      {!isMinimizedState && renderPlaceholder()}
-      <iframe
-        className={buildClassName(
-          styles.frame,
-          shouldDecreaseWebFrameSize && styles.withButton,
-          !isLoaded && styles.hide,
-        )}
-        style={frameStyle}
-        src={url}
-        title={lang('AriaMiniApp', { bot: bot?.firstName })}
-        sandbox={WEB_APP_SANDBOX_ATTRIBUTES}
-        allow={IFRAME_ALLOW_ATTRIBUTES}
-        allowFullScreen
-        ref={frameRef}
-      />
+      {nativeWindowLabel ? (
+        <div className={styles.nativeWindowPlaceholder}>
+          <span>{lang('NoirgramMiniAppInWindow')}</span>
+          <Button size="smaller" fluid={false} onClick={showNativeWindow}>
+            {lang('NoirgramMiniAppShowWindow')}
+          </Button>
+        </div>
+      ) : (
+        <>
+          {!isMinimizedState && renderPlaceholder()}
+          <iframe
+            className={buildClassName(
+              styles.frame,
+              shouldDecreaseWebFrameSize && styles.withButton,
+              !isLoaded && styles.hide,
+            )}
+            style={frameStyle}
+            src={url}
+            title={lang('AriaMiniApp', { bot: bot?.firstName })}
+            sandbox={WEB_APP_SANDBOX_ATTRIBUTES}
+            allow={IFRAME_ALLOW_ATTRIBUTES}
+            allowFullScreen
+            ref={frameRef}
+          />
+        </>
+      )}
       {!isMinimizedState && (
         <div
           style={`background-color: ${bottomBarColor};`}

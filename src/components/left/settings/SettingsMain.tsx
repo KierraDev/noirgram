@@ -123,6 +123,17 @@ const SettingsMain = ({
           </ListItem>
 
           <ListItem
+            icon="settings-filled"
+            iconBg="blue"
+            multiline
+            narrow
+            onClick={() => openSettingsScreen({ screen: SettingsScreens.Noirgram })}
+          >
+            <span className="title">{lang('NoirgramSettings')}</span>
+            <span className="subtitle">{lang('NoirgramSettingsDesc')}</span>
+          </ListItem>
+
+          <ListItem
             icon="notifications-filled"
             iconBg="red"
             multiline

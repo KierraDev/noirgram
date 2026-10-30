@@ -38,4 +38,16 @@ export interface SharedSettings {
   shouldWarnAboutFiles?: boolean;
   shouldSkipBrowserCloseConfirmation: boolean;
   shouldKeepLockScreenBackground: boolean;
+  noirgram?: NoirgramSettings;
+}
+
+export type NoirgramAvatarShape = 'circle' | 'squircle';
+
+// Client-side tweaks in the spirit of Swiftgram / exteraGram
+export interface NoirgramSettings {
+  shouldHideStories?: boolean;
+  shouldShowMessageSeconds?: boolean;
+  shouldShowPeerId?: boolean;
+  shouldHideTypingStatus?: boolean;
+  avatarShape?: NoirgramAvatarShape;
 }

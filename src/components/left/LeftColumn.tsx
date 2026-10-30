@@ -216,6 +216,7 @@ function LeftColumn({
         case SettingsScreens.DataStorage:
         case SettingsScreens.Privacy:
         case SettingsScreens.Performance:
+        case SettingsScreens.Noirgram:
         case SettingsScreens.ActiveSessions:
         case SettingsScreens.Language:
         case SettingsScreens.Stickers:

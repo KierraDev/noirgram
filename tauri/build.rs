@@ -7,6 +7,12 @@ fn main() {
       "open_new_window_cmd",
       "save_current_url",
       "set_menu_translations",
+      "reveal_download",
+      "open_downloads_folder",
+      "open_mini_app_window",
+      "close_mini_app_window",
+      "mini_app_send_event",
+      "mini_app_post_event",
     ]),
   ))
   .expect("Failed to build Tauri application")

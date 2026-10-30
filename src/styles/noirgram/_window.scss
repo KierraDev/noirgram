@@ -1,8 +1,9 @@
 // App-drawn title bar (Windows / Linux): the page content starts below it.
 // Body padding moves in-flow content; fixed full-window layers offset themselves with `--window-title-bar-height`.
+// Keep the height in sync with `WINDOW_TITLE_BAR_HEIGHT` (it is subtracted from `--vh`).
 
 body.has-window-title-bar {
-  --window-title-bar-height: 2.25rem;
+  --window-title-bar-height: 36px;
 
   box-sizing: border-box;
   padding-top: var(--window-title-bar-height);
@@ -15,5 +16,20 @@ body.has-window-title-bar {
   .Modal .modal-container,
   .Modal .modal-backdrop {
     top: var(--window-title-bar-height);
+  }
+
+  // The macOS overlay drag strip would steal clicks from the top of the columns
+  .tauri-drag-region {
+    display: none;
+  }
+
+  // Narrow windows switch to the mobile layout, which pins `#Main` to the viewport.
+  // `--vh` already excludes the title bar, so the body itself keeps the full window height.
+  @media (max-width: 600px) {
+    height: 100%;
+
+    #Main {
+      top: var(--window-title-bar-height);
+    }
   }
 }

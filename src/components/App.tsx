@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect } from '../lib/teact/teact';
 import { withGlobal } from '../global';
 
 import type { GlobalState } from '../global/types';
+import type { NoirgramAvatarShape } from '../global/types/sharedState';
 import type { ThemeKey } from '../types';
 import type { UiLoaderPage } from './common/UiLoader';
 
@@ -12,6 +13,7 @@ import { forceMutation } from '../lib/fasterdom/stricterdom.ts';
 import {
   selectActionMessageBg, selectTabState, selectTheme, selectThemeValues,
 } from '../global/selectors';
+import { selectNoirgramSettings } from '../global/selectors/sharedState';
 import { IS_TAURI } from '../util/browser/globalEnvironment';
 import { HAS_WINDOW_TITLE_BAR, IS_INSTALL_PROMPT_SUPPORTED, PLATFORM_ENV } from '../util/browser/windowEnvironment';
 import buildClassName from '../util/buildClassName';
@@ -56,6 +58,8 @@ type StateProps = {
   theme: ThemeKey;
   customBackgroundColor?: string;
   actionMessageBg?: string;
+  shouldHideStories?: boolean;
+  avatarShape?: NoirgramAvatarShape;
 };
 
 enum AppScreens {
@@ -78,6 +82,8 @@ const App = ({
   theme,
   customBackgroundColor,
   actionMessageBg,
+  shouldHideStories,
+  avatarShape,
 }: StateProps) => {
   const lang = useLang();
 
@@ -250,6 +256,11 @@ const App = ({
     );
   }, [actionMessageBg, theme]);
 
+  useLayoutEffect(() => {
+    document.body.classList.toggle('ng-hide-stories', Boolean(shouldHideStories));
+    document.body.classList.toggle('ng-avatars-squircle', avatarShape === 'squircle');
+  }, [shouldHideStories, avatarShape]);
+
   const getIsInBackgroundLocal = getIsInBackground;
   useSignalEffect(() => {
     // Mutation forced to avoid RAF throttling in background
@@ -284,8 +295,11 @@ export default withGlobal(
     const { state: authState, hasWebAuthTokenFailed, hasWebAuthTokenPasswordRequired } = global.auth;
     const theme = selectTheme(global);
     const themeValues = selectThemeValues(global, theme);
+    const { shouldHideStories, avatarShape } = selectNoirgramSettings(global);
 
     return {
+      shouldHideStories,
+      avatarShape,
       authState,
       isScreenLocked: global.passcode?.isScreenLocked,
       hasPasscode: global.passcode?.hasPasscode,

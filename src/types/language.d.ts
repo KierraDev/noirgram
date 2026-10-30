@@ -3379,6 +3379,30 @@ export interface LangPair {
   'WindowMinimize': undefined;
   'WindowMaximize': undefined;
   'WindowRestore': undefined;
+  'NoirgramSettings': undefined;
+  'NoirgramSettingsDesc': undefined;
+  'NoirgramSectionInterface': undefined;
+  'NoirgramHideStories': undefined;
+  'NoirgramHideStoriesDesc': undefined;
+  'NoirgramMessageSeconds': undefined;
+  'NoirgramMessageSecondsDesc': undefined;
+  'NoirgramShowPeerId': undefined;
+  'NoirgramShowPeerIdDesc': undefined;
+  'NoirgramPeerId': undefined;
+  'NoirgramPeerIdCopied': undefined;
+  'NoirgramSectionAvatars': undefined;
+  'NoirgramAvatarCircle': undefined;
+  'NoirgramAvatarSquircle': undefined;
+  'NoirgramSectionPrivacy': undefined;
+  'NoirgramHideTyping': undefined;
+  'NoirgramHideTypingDesc': undefined;
+  'NoirgramPrivacyDesc': undefined;
+  'NoirgramSectionDownloads': undefined;
+  'NoirgramOpenDownloads': undefined;
+  'NoirgramDownloadsDesc': undefined;
+  'NoirgramShowInFolder': undefined;
+  'NoirgramMiniAppInWindow': undefined;
+  'NoirgramMiniAppShowWindow': undefined;
 }
 
 export interface LangPairWithVariables<V = LangVariable> {
@@ -5632,6 +5656,9 @@ export interface LangPairWithVariables<V = LangVariable> {
   'PeerPickerUnknownPeer': {
     'id': V;
   };
+  'NoirgramDownloadSaved': {
+    'file': V;
+  };
 }
 
 export interface LangPairPlural {
@@ -7863,6 +7890,11 @@ export interface LangKeyGroups {
     keys:
       | 'PeerPickerUnknownPeer';
     variables: 'id';
+  };
+  'file': {
+    keys:
+      | 'NoirgramDownloadSaved';
+    variables: 'file';
   };
 }
 

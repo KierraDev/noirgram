@@ -7,6 +7,7 @@ import type {
 } from '../../../api/types';
 import type { LangFn } from '../../../util/localization';
 
+import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
 import buildClassName from '../../../util/buildClassName';
 import {
   formatCalendarDate, formatCompactTimestamp, formatDateTime, isSameLocalDay, secondsToDate,
@@ -16,6 +17,7 @@ import { getRepeatPeriodText } from '../../../util/scheduledMessages';
 import { formatIntegerCompact } from '../../../util/textFormat';
 import renderText from '../../common/helpers/renderText';
 
+import useSelector from '../../../hooks/data/useSelector';
 import useFlag from '../../../hooks/useFlag';
 import useLang from '../../../hooks/useLang';
 
@@ -137,13 +139,16 @@ const MessageMeta = ({
   }, [lang, repliesThreadInfo]);
 
   const shouldShowPrimaryEditedDate = Boolean(message.isEdited && isMessagePrimaryEditedDateEnabled);
+  const { shouldShowMessageSeconds } = useSelector(selectNoirgramSettings);
 
   const date = useMemo(() => {
     if (shouldShowPrimaryEditedDate) {
       return formatEditedDate(lang, message.date, message.editDate!, withFullDate, message.isVideoProcessingPending);
     }
 
-    const time = formatDateTime(lang, secondsToDate(message.date), { time: 'short' });
+    const time = formatDateTime(lang, secondsToDate(message.date), {
+      time: shouldShowMessageSeconds ? 'long' : 'short',
+    });
     const baseDate = !withFullDate
       ? time
       : formatCompactTimestamp(lang, secondsToDate(message.forwardInfo?.date || message.date), { withTime: true });
@@ -155,7 +160,7 @@ const MessageMeta = ({
     return baseDate;
   }, [
     lang, message.date, message.editDate, message.forwardInfo?.date, message.isVideoProcessingPending,
-    repeatPeriodText, shouldShowPrimaryEditedDate, withFullDate,
+    repeatPeriodText, shouldShowPrimaryEditedDate, withFullDate, shouldShowMessageSeconds,
   ]);
 
   const fullClassName = buildClassName(

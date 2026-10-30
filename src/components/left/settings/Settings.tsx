@@ -36,6 +36,7 @@ import SettingsGeneralBackgroundColor from './SettingsGeneralBackgroundColor';
 import SettingsHeader from './SettingsHeader';
 import SettingsLanguage from './SettingsLanguage';
 import SettingsMain from './SettingsMain';
+import SettingsNoirgram from './SettingsNoirgram';
 import SettingsNotifications from './SettingsNotifications';
 import SettingsPasskeys from './SettingsPasskeys';
 import SettingsPerformance from './SettingsPerformance';
@@ -559,6 +560,14 @@ const Settings = ({
       case SettingsScreens.Passkeys:
         return (
           <SettingsPasskeys
+            isActive={isScreenActive}
+            onReset={handleReset}
+          />
+        );
+
+      case SettingsScreens.Noirgram:
+        return (
+          <SettingsNoirgram
             isActive={isScreenActive}
             onReset={handleReset}
           />

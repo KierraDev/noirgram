@@ -7,6 +7,7 @@ import type { WebApp, WebAppInboundEvent, WebAppOutboundEvent } from '../../../.
 import { getWebAppKey } from '../../../../global/helpers';
 import { isMessageFromIframe } from '../../../../util/browser/iframe';
 import { isValidProtocol } from '../../../../util/browser/url';
+import { sendMiniAppEvent } from '../../../../util/tauri/miniAppWindows';
 import { extractCurrentThemeParams } from '../../../../util/themeStyle';
 import { REM } from '../../../common/helpers/mediaDimensions';
 
@@ -44,6 +45,8 @@ function useWebAppFrame(
   onEvent: (event: WebAppInboundEvent) => void,
   webApp?: WebApp,
   onLoad?: () => void,
+  // Set when the mini app runs in its own native window instead of the iframe
+  nativeWindowLabel?: string,
 ) {
   const {
     showNotification,
@@ -65,6 +68,13 @@ function useWebAppFrame(
   const webAppOrigin = isSameOrigin ? getWebAppOrigin(webApp.url) : undefined;
 
   const flushPendingEvents = useCallback(() => {
+    if (nativeWindowLabel) {
+      const events = pendingEventsRef.current;
+      pendingEventsRef.current = [];
+      events.forEach((event) => sendMiniAppEvent(nativeWindowLabel, event));
+      return;
+    }
+
     const frame = ref.current;
     if (!frame?.contentWindow || (isSameOrigin && !webAppOrigin)) return;
     // The initial `about:blank` document inherits the parent's origin
@@ -75,7 +85,7 @@ function useWebAppFrame(
     events.forEach((event) => {
       frame.contentWindow!.postMessage(JSON.stringify(event), webAppOrigin || '*');
     });
-  }, [isSameOrigin, ref, webAppOrigin]);
+  }, [isSameOrigin, ref, webAppOrigin, nativeWindowLabel]);
 
   useEffect(() => {
     if (!ref.current || !isOpen) return undefined;
@@ -179,16 +189,25 @@ function useWebAppFrame(
   }, [sendEvent]);
 
   const handleMessage = useLastCallback((event: MessageEvent<string>) => {
-    if (ignoreEventsRef.current) {
-      return;
-    }
+    if (nativeWindowLabel) return;
 
     if ((isSameOrigin && !webAppOrigin) || !isMessageFromIframe(event, ref.current, webAppOrigin)) {
       return;
     }
 
     try {
-      const data = JSON.parse(event.data) as WebAppInboundEvent;
+      handleInboundEvent(JSON.parse(event.data) as WebAppInboundEvent);
+    } catch (err) {
+      // Ignore other messages
+    }
+  });
+
+  const handleInboundEvent = useLastCallback((data: WebAppInboundEvent) => {
+    if (ignoreEventsRef.current) {
+      return;
+    }
+
+    try {
       const { eventType, eventData } = data;
       flushPendingEvents();
       // Handle some app requests here to simplify hook usage
@@ -427,7 +446,7 @@ function useWebAppFrame(
   }, [isOpen, isFullscreen, sendViewport, sendSafeArea, ref]);
 
   return {
-    sendEvent, sendFullScreenChanged, reloadFrame, sendViewport, sendSafeArea, sendTheme,
+    sendEvent, sendFullScreenChanged, reloadFrame, sendViewport, sendSafeArea, sendTheme, handleInboundEvent,
   };
 }
 

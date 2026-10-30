@@ -1,0 +1,54 @@
+// Tactile feedback: presses sink instantly and spring back on release.
+// The standalone `scale` property is used so upstream `transform` animations stay intact,
+// and only compositor-friendly properties are animated.
+
+body .Button {
+  text-transform: none;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    opacity 0.2s,
+    scale 420ms var(--ng-ease-spring);
+
+  &:not(.disabled, :disabled):active {
+    scale: 0.96;
+  }
+}
+
+body .ListItem .ListItem-button {
+  transition:
+    background-color 150ms var(--ng-ease-out),
+    scale 420ms var(--ng-ease-spring);
+}
+
+body .ListItem:not(.disabled, .is-static) .ListItem-button:active {
+  scale: 0.985;
+  transition: background-color 150ms var(--ng-ease-out), scale 80ms var(--ng-ease-out);
+}
+
+body .Menu .MenuItem {
+  transition:
+    background-color 120ms var(--ng-ease-out),
+    scale 360ms var(--ng-ease-spring);
+
+  &:not(.disabled):active {
+    scale: 0.97;
+    transition: background-color 120ms var(--ng-ease-out), scale 80ms var(--ng-ease-out);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body .Button,
+  body .ListItem .ListItem-button,
+  body .Menu .MenuItem {
+    scale: none !important;
+  }
+}
+
+body.no-page-transitions {
+  .Button,
+  .ListItem .ListItem-button,
+  .Menu .MenuItem {
+    scale: none !important;
+  }
+}

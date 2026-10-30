@@ -44,6 +44,7 @@ import './ui/wallet';
 import './ui/reactions';
 import './ui/stories';
 import './ui/statistics';
+import './ui/noirgram';
 import './apiUpdaters/initial';
 import './apiUpdaters/chats';
 import './apiUpdaters/messages';

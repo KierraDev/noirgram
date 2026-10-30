@@ -2211,16 +2211,52 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the close_mini_app_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-mini-app-window",
+          "markdownDescription": "Enables the close_mini_app_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the mark_title_bar_overlay command without any pre-configured scope.",
           "type": "string",
           "const": "allow-mark-title-bar-overlay",
           "markdownDescription": "Enables the mark_title_bar_overlay command without any pre-configured scope."
         },
         {
+          "description": "Enables the mini_app_post_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-mini-app-post-event",
+          "markdownDescription": "Enables the mini_app_post_event command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the mini_app_send_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-mini-app-send-event",
+          "markdownDescription": "Enables the mini_app_send_event command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_downloads_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-downloads-folder",
+          "markdownDescription": "Enables the open_downloads_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_mini_app_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-mini-app-window",
+          "markdownDescription": "Enables the open_mini_app_window command without any pre-configured scope."
+        },
+        {
           "description": "Enables the open_new_window_cmd command without any pre-configured scope.",
           "type": "string",
           "const": "allow-open-new-window-cmd",
           "markdownDescription": "Enables the open_new_window_cmd command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the reveal_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-reveal-download",
+          "markdownDescription": "Enables the reveal_download command without any pre-configured scope."
         },
         {
           "description": "Enables the save_current_url command without any pre-configured scope.",
@@ -2247,16 +2283,52 @@
           "markdownDescription": "Enables the set_window_title command without any pre-configured scope."
         },
         {
+          "description": "Denies the close_mini_app_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-mini-app-window",
+          "markdownDescription": "Denies the close_mini_app_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the mark_title_bar_overlay command without any pre-configured scope.",
           "type": "string",
           "const": "deny-mark-title-bar-overlay",
           "markdownDescription": "Denies the mark_title_bar_overlay command without any pre-configured scope."
         },
         {
+          "description": "Denies the mini_app_post_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-mini-app-post-event",
+          "markdownDescription": "Denies the mini_app_post_event command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the mini_app_send_event command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-mini-app-send-event",
+          "markdownDescription": "Denies the mini_app_send_event command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_downloads_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-downloads-folder",
+          "markdownDescription": "Denies the open_downloads_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_mini_app_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-mini-app-window",
+          "markdownDescription": "Denies the open_mini_app_window command without any pre-configured scope."
+        },
+        {
           "description": "Denies the open_new_window_cmd command without any pre-configured scope.",
           "type": "string",
           "const": "deny-open-new-window-cmd",
           "markdownDescription": "Denies the open_new_window_cmd command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the reveal_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-reveal-download",
+          "markdownDescription": "Denies the reveal_download command without any pre-configured scope."
         },
         {
           "description": "Denies the save_current_url command without any pre-configured scope.",

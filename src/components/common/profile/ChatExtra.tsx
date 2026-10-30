@@ -40,6 +40,7 @@ import {
   selectUser,
   selectUserFullInfo,
 } from '../../../global/selectors';
+import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
 import { VTT_PROFILE_NOTE_COLLAPSE, VTT_PROFILE_NOTE_EXPAND } from '../../../util/animations/viewTransitionTypes';
 import buildClassName from '../../../util/buildClassName';
 import { copyTextToClipboard } from '../../../util/clipboard';
@@ -53,6 +54,7 @@ import { renderTextWithEntities } from '../helpers/renderTextWithEntities';
 
 import { useViewTransition } from '../../../hooks/animations/useViewTransition';
 import { useVtn } from '../../../hooks/animations/useVtn';
+import useSelector from '../../../hooks/data/useSelector';
 import useCollapsibleLines from '../../../hooks/element/useCollapsibleLines';
 import useEffectWithPrevDeps from '../../../hooks/useEffectWithPrevDeps';
 import useLang from '../../../hooks/useLang';
@@ -162,6 +164,7 @@ const ChatExtra = ({
   } = user || {};
   const { id: chatId, usernames: chatUsernames } = chat || {};
   const peerId = userId || chatId;
+  const { shouldShowPeerId } = useSelector(selectNoirgramSettings);
   const {
     businessLocation,
     businessWorkHours,
@@ -476,6 +479,19 @@ const ChatExtra = ({
               }
             </span>
             <span className="subtitle">{lang(userId ? 'UserBio' : 'Info')}</span>
+          </ListItem>
+        )}
+        {shouldShowPeerId && peerId && !isTopicInfo && (
+          <ListItem
+            icon="hashtag"
+            iconBg="gray"
+            multiline
+            narrow
+            ripple
+            onClick={() => copy(peerId, 'NoirgramPeerIdCopied')}
+          >
+            <span className="title">{peerId}</span>
+            <span className="subtitle">{lang('NoirgramPeerId')}</span>
           </ListItem>
         )}
         {activeChatUsernames && !isTopicInfo && renderUsernames(activeChatUsernames, true)}

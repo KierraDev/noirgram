@@ -1,7 +1,7 @@
 import type { IDimensions } from '../types';
 
 import { requestMutation } from '../lib/fasterdom/fasterdom';
-import { IS_IOS } from './browser/windowEnvironment';
+import { HAS_WINDOW_TITLE_BAR, IS_IOS, WINDOW_TITLE_BAR_HEIGHT } from './browser/windowEnvironment';
 import { throttle } from './schedulers';
 
 const WINDOW_ORIENTATION_CHANGE_THROTTLE_MS = 100;
@@ -32,6 +32,10 @@ export function updateSizes(): IDimensions {
     height = window.visualViewport!.height + window.visualViewport!.pageTop;
   } else {
     height = window.innerHeight;
+  }
+
+  if (HAS_WINDOW_TITLE_BAR) {
+    height -= WINDOW_TITLE_BAR_HEIGHT;
   }
 
   requestMutation(() => {

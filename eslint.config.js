@@ -37,6 +37,8 @@ export default defineConfig(
     'public/',
     'deploy/update_version.js',
     'tauri/target/',
+    // Injected into third-party mini app pages by the Tauri shell, not part of the app bundle
+    'tauri/src/mini_app_bridge.js',
   ]),
   {
     name: 'teact-config',

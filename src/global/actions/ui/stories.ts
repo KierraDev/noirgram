@@ -18,6 +18,7 @@ import {
   selectStoryListForViewer,
   selectTabState,
 } from '../../selectors';
+import { selectNoirgramSettings } from '../../selectors/sharedState';
 import { fetchChatByUsername } from '../api/chats';
 import { getPeerStarsForMessage } from '../api/messages';
 
@@ -124,7 +125,7 @@ addActionHandler('toggleStoryRibbon', (global, actions, payload): ActionReturnTy
   const { isShown, isArchived, tabId = getCurrentTabId() } = payload;
 
   const orderedIds = global.stories.orderedPeerIds[isArchived ? 'archived' : 'active'];
-  if (!orderedIds?.length) {
+  if (!orderedIds?.length || (isShown && selectNoirgramSettings(global).shouldHideStories)) {
     return global;
   }
 

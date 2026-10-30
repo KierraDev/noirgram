@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 use serde_json::json;
@@ -57,10 +59,32 @@ pub static TRAFFIC_LIGHT_POSITION_OVERLAY_MOBILE: LazyLock<LogicalPosition<f64>>
   TRAFFIC_LIGHT_POSITION_OVERLAY_MOBILE_LEGACY
 });
 
+// Every webview shares one WebView2 environment, so all windows must use the same arguments.
+// Tauri's default `--disable-features` list is kept, GPU raster is forced on, and background
+// throttling is off so the MTProto connection and timers stay alive while the window is hidden to tray.
+const BROWSER_ARGS: &str = "--autoplay-policy=no-user-gesture-required \
+  --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,CalculateNativeWinOcclusion \
+  --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
+  --disable-background-timer-throttling --disable-renderer-backgrounding \
+  --disable-backgrounding-occluded-windows";
+
+const MINI_APP_LABEL_PREFIX: &str = "miniapp-";
+const MINI_APP_BRIDGE_SCRIPT: &str = include_str!("mini_app_bridge.js");
+const DOWNLOADS_SUBDIRECTORY: &str = "Noirgram";
+
+// Mini app window label -> label of the app window that opened it
+static MINI_APP_OWNERS: LazyLock<Mutex<HashMap<String, String>>> =
+  LazyLock::new(|| Mutex::new(HashMap::new()));
+
 pub const WINDOW_WIDTH: f64 = 1088.0;
 pub const WINDOW_HEIGHT: f64 = 700.0;
 pub const WINDOW_MIN_WIDTH: f64 = 360.0;
 pub const WINDOW_MIN_HEIGHT: f64 = 200.0;
+
+const MINI_APP_WIDTH: f64 = 420.0;
+const MINI_APP_HEIGHT: f64 = 720.0;
+const MINI_APP_MIN_WIDTH: f64 = 320.0;
+const MINI_APP_MIN_HEIGHT: f64 = 400.0;
 
 pub static LAST_URL: LazyLock<std::sync::Mutex<String>> =
   LazyLock::new(|| std::sync::Mutex::new(BASE_URL.to_string()));
@@ -122,9 +146,18 @@ pub fn run() {
 
   let app = app.on_window_event(|window, event| match event {
     tauri::WindowEvent::CloseRequested { api, .. } => {
-      let active_windows = window.app_handle().windows();
+      if is_mini_app_label(window.label()) {
+        return;
+      }
 
-      if active_windows.len() == 1 {
+      let app_windows_count = window
+        .app_handle()
+        .windows()
+        .keys()
+        .filter(|label| !is_mini_app_label(label))
+        .count();
+
+      if app_windows_count == 1 {
         // Save current URL before hiding the last window
         save_window_url(&window.app_handle(), window.label());
 
@@ -163,6 +196,18 @@ pub fn run() {
       if let Ok(mut states) = WINDOW_STATES.lock() {
         states.remove(window.label());
       }
+
+      if is_mini_app_label(window.label()) {
+        let owner = MINI_APP_OWNERS
+          .lock()
+          .ok()
+          .and_then(|mut owners| owners.remove(window.label()));
+        if let Some(owner) = owner {
+          window
+            .emit_to(owner.as_str(), "mini-app-closed", json!({ "label": window.label() }))
+            .unwrap_or_default();
+        }
+      }
     }
     _ => {}
   });
@@ -196,7 +241,13 @@ pub fn run() {
     set_window_title,
     open_new_window_cmd,
     save_current_url,
-    set_menu_translations
+    set_menu_translations,
+    reveal_download,
+    open_downloads_folder,
+    open_mini_app_window,
+    close_mini_app_window,
+    mini_app_send_event,
+    mini_app_post_event
   ]);
 
   app
@@ -330,7 +381,7 @@ pub(crate) fn open_new_window(
     window_label.clone(),
     tauri::WebviewUrl::App(url.to_string().into()),
   )
-  .additional_browser_args("--autoplay-policy=no-user-gesture-required")
+  .additional_browser_args(BROWSER_ARGS)
   .fullscreen(false)
   .resizable(true)
   .title(DEFAULT_WINDOW_TITLE)
@@ -344,25 +395,26 @@ pub(crate) fn open_new_window(
   .on_navigation(move |url| is_allowed_app_url(url, &base_url))
   .on_download(|window, event| {
     match event {
-      #[allow(unused_variables)]
+      // Saved silently into `Downloads/Noirgram`; the web app shows where the file went
       DownloadEvent::Requested { destination, .. } => {
-        // On macOS, Webview does not provide basic download logic
-        #[cfg(target_os = "macos")]
-        if let Some(filename) = destination.file_name() {
-          if let Ok(downloads_dir) = window.app_handle().path().download_dir() {
-            let new_destination = downloads_dir.join(filename);
-            *destination = new_destination;
+        if let (Some(filename), Some(downloads_dir)) = (
+          destination.file_name().map(|name| name.to_os_string()),
+          get_downloads_dir(window.app_handle()),
+        ) {
+          if std::fs::create_dir_all(&downloads_dir).is_ok() {
+            *destination = get_unique_path(&downloads_dir, &filename);
           }
         }
       }
-      DownloadEvent::Finished { url, success, .. } => {
+      DownloadEvent::Finished { url, path, success } => {
         window
           .emit_to(
             window.label(),
             "download-finished",
             json!({
               "url": url.to_string(),
-              "success": success
+              "success": success,
+              "path": path.map(|path| path.to_string_lossy().into_owned()),
             }),
           )
           .unwrap_or_default();
@@ -409,6 +461,237 @@ pub(crate) fn open_new_window(
   }
 
   Ok(window)
+}
+
+fn get_downloads_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
+  app
+    .path()
+    .download_dir()
+    .ok()
+    .map(|dir| dir.join(DOWNLOADS_SUBDIRECTORY))
+}
+
+// `photo.jpg` -> `photo (1).jpg` when the name is taken, like browsers do
+fn get_unique_path(dir: &Path, filename: &OsStr) -> PathBuf {
+  let candidate = dir.join(filename);
+  if !candidate.exists() {
+    return candidate;
+  }
+
+  let filename = Path::new(filename);
+  let stem = filename
+    .file_stem()
+    .map(|stem| stem.to_string_lossy().into_owned())
+    .unwrap_or_default();
+  let extension = filename
+    .extension()
+    .map(|extension| extension.to_string_lossy().into_owned());
+
+  for index in 1..10_000 {
+    let name = match &extension {
+      Some(extension) => format!("{stem} ({index}).{extension}"),
+      None => format!("{stem} ({index})"),
+    };
+    let candidate = dir.join(name);
+    if !candidate.exists() {
+      return candidate;
+    }
+  }
+
+  candidate
+}
+
+fn open_in_file_manager(path: &Path, should_select: bool) -> Result<(), String> {
+  #[cfg(target_os = "windows")]
+  let result = {
+    use std::os::windows::process::CommandExt;
+
+    let mut command = std::process::Command::new("explorer.exe");
+    if should_select {
+      command.raw_arg(format!("/select,\"{}\"", path.display()));
+    } else {
+      command.arg(path);
+    }
+    command.spawn()
+  };
+
+  #[cfg(target_os = "macos")]
+  let result = {
+    let mut command = std::process::Command::new("open");
+    if should_select {
+      command.arg("-R");
+    }
+    command.arg(path).spawn()
+  };
+
+  #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+  let result = {
+    let target = if should_select {
+      path.parent().unwrap_or(path)
+    } else {
+      path
+    };
+    std::process::Command::new("xdg-open").arg(target).spawn()
+  };
+
+  result.map(|_| ()).map_err(|err| err.to_string())
+}
+
+// Only files that we saved ourselves can be revealed, never arbitrary paths from the web app
+#[tauri::command]
+fn reveal_download(app: tauri::AppHandle, path: String) -> Result<(), String> {
+  let downloads_dir = get_downloads_dir(&app)
+    .and_then(|dir| dir.canonicalize().ok())
+    .ok_or("Downloads folder is unavailable")?;
+  let path = Path::new(&path).canonicalize().map_err(|err| err.to_string())?;
+
+  if !path.starts_with(&downloads_dir) {
+    return Err("Path is outside of the downloads folder".into());
+  }
+
+  open_in_file_manager(&dunce_path(&path), true)
+}
+
+#[tauri::command]
+fn open_downloads_folder(app: tauri::AppHandle) -> Result<(), String> {
+  let downloads_dir = get_downloads_dir(&app).ok_or("Downloads folder is unavailable")?;
+  std::fs::create_dir_all(&downloads_dir).map_err(|err| err.to_string())?;
+
+  open_in_file_manager(&downloads_dir, false)
+}
+
+// `canonicalize` returns `\\?\C:\...` on Windows, which Explorer does not understand
+fn dunce_path(path: &Path) -> PathBuf {
+  let raw = path.to_string_lossy();
+  match raw.strip_prefix(r"\\?\") {
+    Some(stripped) if !stripped.starts_with("UNC\\") => PathBuf::from(stripped),
+    _ => path.to_path_buf(),
+  }
+}
+
+fn is_mini_app_label(label: &str) -> bool {
+  label.strip_prefix(MINI_APP_LABEL_PREFIX).is_some_and(|id| {
+    !id.is_empty() && id.len() <= 64 && id.chars().all(|char| char.is_ascii_alphanumeric() || char == '-')
+  })
+}
+
+fn get_mini_app_owner(label: &str) -> Option<String> {
+  MINI_APP_OWNERS
+    .lock()
+    .ok()
+    .and_then(|owners| owners.get(label).cloned())
+}
+
+// Mini apps run in their own native window like in Telegram Desktop. Their remote pages are
+// not embeddable into the app origin, and a window gives them real size and focus.
+#[tauri::command]
+async fn open_mini_app_window(
+  app: tauri::AppHandle,
+  window: tauri::WebviewWindow,
+  label: String,
+  url: String,
+  title: String,
+) -> Result<(), String> {
+  if !is_mini_app_label(&label) {
+    return Err("Invalid mini app label".into());
+  }
+
+  if let Some(existing) = app.get_webview_window(&label) {
+    existing.unminimize().unwrap_or_default();
+    existing.show().unwrap_or_default();
+    existing.set_focus().unwrap_or_default();
+    return Ok(());
+  }
+
+  let url = Url::parse(&url).map_err(|err| err.to_string())?;
+  if !matches!(url.scheme(), "http" | "https") {
+    return Err("Unsupported mini app URL".into());
+  }
+
+  if let Ok(mut owners) = MINI_APP_OWNERS.lock() {
+    owners.insert(label.clone(), window.label().to_string());
+  }
+
+  let result = tauri::WebviewWindowBuilder::new(&app, &label, tauri::WebviewUrl::External(url))
+    .title(title)
+    .inner_size(MINI_APP_WIDTH, MINI_APP_HEIGHT)
+    .min_inner_size(MINI_APP_MIN_WIDTH, MINI_APP_MIN_HEIGHT)
+    .resizable(true)
+    .center()
+    .theme(Some(tauri::Theme::Dark))
+    .additional_browser_args(BROWSER_ARGS)
+    .initialization_script(MINI_APP_BRIDGE_SCRIPT)
+    .on_navigation(|url| matches!(url.scheme(), "http" | "https"))
+    .build();
+
+  if let Err(err) = result {
+    if let Ok(mut owners) = MINI_APP_OWNERS.lock() {
+      owners.remove(&label);
+    }
+    return Err(err.to_string());
+  }
+
+  Ok(())
+}
+
+#[tauri::command]
+fn close_mini_app_window(app: tauri::AppHandle, window: tauri::WebviewWindow, label: String) {
+  if get_mini_app_owner(&label).as_deref() != Some(window.label()) {
+    return;
+  }
+
+  if let Some(mini_app_window) = app.get_webview_window(&label) {
+    mini_app_window.close().unwrap_or_default();
+  }
+}
+
+// App window -> mini app: delivered through `Telegram.WebView.receiveEvent`
+#[tauri::command]
+fn mini_app_send_event(
+  app: tauri::AppHandle,
+  window: tauri::WebviewWindow,
+  label: String,
+  event_type: String,
+  event_data: Option<serde_json::Value>,
+) -> Result<(), String> {
+  if get_mini_app_owner(&label).as_deref() != Some(window.label()) {
+    return Err("Unknown mini app".into());
+  }
+
+  let mini_app_window = app.get_webview_window(&label).ok_or("Mini app window is closed")?;
+  let event_type = serde_json::to_string(&event_type).map_err(|err| err.to_string())?;
+  let event_data = serde_json::to_string(&event_data.unwrap_or(serde_json::Value::Null))
+    .map_err(|err| err.to_string())?;
+
+  mini_app_window
+    .eval(format!(
+      "window.__noirgramReceiveEvent && window.__noirgramReceiveEvent({event_type}, {event_data});"
+    ))
+    .map_err(|err| err.to_string())
+}
+
+// Mini app -> app window that owns it. The only command exposed to remote mini app pages.
+#[tauri::command]
+fn mini_app_post_event(window: tauri::WebviewWindow, event_type: String, event_data: Option<String>) {
+  if !is_mini_app_label(window.label()) {
+    return;
+  }
+
+  let Some(owner) = get_mini_app_owner(window.label()) else {
+    return;
+  };
+
+  window
+    .emit_to(
+      owner.as_str(),
+      "mini-app-event",
+      json!({
+        "label": window.label(),
+        "eventType": event_type,
+        "eventData": event_data.unwrap_or_default(),
+      }),
+    )
+    .unwrap_or_default();
 }
 
 fn resolve_app_url(url: &str, base_url: &Url) -> Option<Url> {

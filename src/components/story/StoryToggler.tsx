@@ -8,6 +8,7 @@ import type { GlobalState } from '../../global/types';
 
 import { ANIMATION_END_DELAY, PREVIEW_AVATAR_COUNT } from '../../config';
 import { selectIsForumPanelOpen, selectPerformanceSettingsValue, selectTabState } from '../../global/selectors';
+import { selectNoirgramSettings } from '../../global/selectors/sharedState';
 import { animateClosing, animateOpening, ANIMATION_DURATION } from './helpers/ribbonAnimation';
 
 import useLang from '../../hooks/useLang';
@@ -140,11 +141,12 @@ export default memo(withGlobal<OwnProps>((global, { isArchived }): Complete<Stat
   const { storyViewer: { isRibbonShown, isArchivedRibbonShown } } = selectTabState(global);
   const isForumPanelOpen = selectIsForumPanelOpen(global);
   const withAnimation = selectPerformanceSettingsValue(global, 'storyRibbonAnimations');
+  const { shouldHideStories } = selectNoirgramSettings(global);
 
   return {
     currentUserId: global.currentUserId!,
     orderedPeerIds: isArchived ? archived : active,
-    isShown: isArchived ? !isArchivedRibbonShown : !isRibbonShown,
+    isShown: !shouldHideStories && (isArchived ? !isArchivedRibbonShown : !isRibbonShown),
     isForumPanelOpen,
     withAnimation,
     usersById: global.users.byId,

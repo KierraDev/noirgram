@@ -1,0 +1,18 @@
+// Visual parts of the Noirgram settings (Settings › Noirgram), toggled by body classes in `App.tsx`
+
+body.ng-hide-stories {
+  .Avatar .story-circle {
+    display: none;
+  }
+
+  .Avatar.with-story-circle > .inner {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+body.ng-avatars-squircle .Avatar:not(.forum) {
+  --radius: 30%;
+}

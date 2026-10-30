@@ -6,7 +6,12 @@ import { MouseButton } from '../browser/windowEnvironment';
 type DownloadFinishedEvent = {
   success: boolean;
   url: string;
+  path?: string;
 };
+
+function getFileName(path: string) {
+  return path.split(/[\\/]/).pop() || path;
+}
 
 let isSetup = false;
 export default function setupTauriListeners() {
@@ -23,10 +28,22 @@ export default function setupTauriListeners() {
   const eventPromise = import('@tauri-apps/api/event');
   eventPromise.then(({ listen }) => {
     listen<DownloadFinishedEvent>('download-finished', (event) => {
-      if (event.payload.success) return;
+      const { success, path } = event.payload;
+
+      if (!success) {
+        getActions().showNotification({
+          message: { key: 'NativeDownloadFailed' },
+        });
+        return;
+      }
+
+      if (!path) return;
 
       getActions().showNotification({
-        message: { key: 'NativeDownloadFailed' },
+        message: { key: 'NoirgramDownloadSaved', variables: { file: getFileName(path) } },
+        icon: 'download',
+        actionText: { key: 'NoirgramShowInFolder' },
+        action: { action: 'revealDownloadedFile', payload: { path } },
       });
     });
   });

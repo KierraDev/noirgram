@@ -1,0 +1,13 @@
+// Desktop scrollbars: thin and invisible until the pointer is over the scroller.
+// Kept in a layer so explicit upstream rules (`.no-scrollbar`, `.custom-scroll`) still win.
+
+@layer noirgram-base {
+  body.is-tauri * {
+    scrollbar-color: transparent transparent;
+    scrollbar-width: thin;
+  }
+
+  body.is-tauri *:hover {
+    scrollbar-color: var(--color-scrollbar) transparent;
+  }
+}

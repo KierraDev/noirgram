@@ -132,7 +132,7 @@ import type { ClipboardTextFormat, MessageCopyRequest } from '../../types/messag
 import type { WebApp, WebAppOutboundEvent } from '../../types/webapp';
 import type { RegularLangFnParameters } from '../../util/localization';
 import type { DownloadableMedia } from '../helpers';
-import type { SharedState } from './sharedState';
+import type { NoirgramSettings, SharedState } from './sharedState';
 import type { AiEditorContent, ReactionDeletionContext, TabState } from './tabState';
 
 export type WithTabId = { tabId?: number };
@@ -2749,6 +2749,11 @@ export interface ActionPayloads {
     key: string;
     skipClosingConfirmation?: boolean;
   } & WithTabId;
+  updateNoirgramSettings: Partial<NoirgramSettings>;
+  revealDownloadedFile: {
+    path: string;
+  };
+  openDownloadsFolder: undefined;
   sendWebAppEvent: {
     webAppKey: string;
     event: WebAppOutboundEvent;
