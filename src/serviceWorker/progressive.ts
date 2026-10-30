@@ -3,6 +3,7 @@ import {
   MEDIA_CACHE_MAX_BYTES,
   MEDIA_PROGRESSIVE_CACHE_DISABLED,
   MEDIA_PROGRESSIVE_CACHE_NAME,
+  MEDIA_VIEWER_PATH,
 } from '../config';
 import { getAccountSlot } from '../util/accountSlot';
 import generateUniqueId from '../util/generateUniqueId';
@@ -163,7 +164,11 @@ export async function requestPart(
   params: { url: string; start: number; end: number },
 ): Promise<PartInfo | undefined> {
   const isDownload = params.url.includes('/download/');
-  const client = await (isDownload ? getClientForRequest(params.url) : self.clients.get(e.clientId));
+  let client = await (isDownload ? getClientForRequest(params.url) : self.clients.get(e.clientId));
+  // The detached media viewer window has no API of its own, an app window streams for it
+  if (client && isMediaViewerClient(client)) {
+    client = await getClientForRequest(params.url);
+  }
   if (!client) {
     return undefined;
   }
@@ -200,8 +205,13 @@ async function getClientForRequest(url: string) {
   const urlAccountSlot = getAccountSlot(url);
   const clients = await self.clients.matchAll();
   return clients.find((c) => (
-    c.type === 'window' && c.frameType === 'top-level' && getAccountSlot(c.url) === urlAccountSlot
+    c.type === 'window' && c.frameType === 'top-level' && !isMediaViewerClient(c)
+    && getAccountSlot(c.url) === urlAccountSlot
   ));
+}
+
+function isMediaViewerClient(client: Client) {
+  return new URL(client.url).pathname.endsWith(MEDIA_VIEWER_PATH);
 }
 
 self.addEventListener('message', (e) => {

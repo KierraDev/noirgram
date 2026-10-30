@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect } from '../lib/teact/teact';
 import { withGlobal } from '../global';
 
 import type { GlobalState } from '../global/types';
-import type { NoirgramAvatarShape } from '../global/types/sharedState';
+import type {
+  NoirgramAccent, NoirgramAvatarShape, NoirgramChatListDensity,
+} from '../global/types/sharedState';
 import type { ThemeKey } from '../types';
 import type { UiLoaderPage } from './common/UiLoader';
 
@@ -27,6 +29,7 @@ import { handoffWebLogin } from '../util/webLoginHandoff';
 import { updateSizes } from '../util/windowSize';
 
 import useDesktopHotkeys from '../hooks/tauri/useDesktopHotkeys';
+import useFileDragOut from '../hooks/tauri/useFileDragOut';
 import useTauriDrag from '../hooks/tauri/useTauriDrag';
 import useAppLayout from '../hooks/useAppLayout';
 import useFileHoverOpen, {
@@ -61,6 +64,8 @@ type StateProps = {
   actionMessageBg?: string;
   shouldHideStories?: boolean;
   avatarShape?: NoirgramAvatarShape;
+  accent?: NoirgramAccent;
+  chatListDensity?: NoirgramChatListDensity;
 };
 
 enum AppScreens {
@@ -85,10 +90,13 @@ const App = ({
   actionMessageBg,
   shouldHideStories,
   avatarShape,
+  accent,
+  chatListDensity,
 }: StateProps) => {
   const lang = useLang();
 
   useDesktopHotkeys();
+  useFileDragOut();
 
   const { isMobile } = useAppLayout();
   const isMobileOs = PLATFORM_ENV === 'iOS' || PLATFORM_ENV === 'Android';
@@ -262,7 +270,15 @@ const App = ({
   useLayoutEffect(() => {
     document.body.classList.toggle('ng-hide-stories', Boolean(shouldHideStories));
     document.body.classList.toggle('ng-avatars-squircle', avatarShape === 'squircle');
-  }, [shouldHideStories, avatarShape]);
+    document.body.classList.toggle('ng-density-compact', chatListDensity === 'compact');
+    document.body.classList.toggle('ng-density-large', chatListDensity === 'large');
+    // The brand blue is the theme itself, other accents recolor it on top
+    if (accent && accent !== 'noir') {
+      document.body.dataset.ngAccent = accent;
+    } else {
+      delete document.body.dataset.ngAccent;
+    }
+  }, [shouldHideStories, avatarShape, accent, chatListDensity]);
 
   const getIsInBackgroundLocal = getIsInBackground;
   useSignalEffect(() => {
@@ -298,11 +314,15 @@ export default withGlobal(
     const { state: authState, hasWebAuthTokenFailed, hasWebAuthTokenPasswordRequired } = global.auth;
     const theme = selectTheme(global);
     const themeValues = selectThemeValues(global, theme);
-    const { shouldHideStories, avatarShape } = selectNoirgramSettings(global);
+    const {
+      shouldHideStories, avatarShape, accent, chatListDensity,
+    } = selectNoirgramSettings(global);
 
     return {
       shouldHideStories,
       avatarShape,
+      accent,
+      chatListDensity,
       authState,
       isScreenLocked: global.passcode?.isScreenLocked,
       hasPasscode: global.passcode?.hasPasscode,

@@ -7,6 +7,7 @@ import type { IconName } from '../../types/icons';
 import type { MenuItemProps } from '../ui/MenuItem';
 import type { MediaViewerItem, ViewableMedia } from './helpers/getViewableMedia';
 
+import { APP_NAME } from '../../config';
 import {
   canEditMediaInEditor,
   getAllowedAttachmentOptions,
@@ -14,6 +15,8 @@ import {
   getMediaFilename,
   getMediaFormat,
   getMediaHash,
+  getPhotoFullDimensions,
+  getVideoDimensions,
 } from '../../global/helpers';
 import {
   selectActiveDownloads,
@@ -25,6 +28,7 @@ import {
   selectPerformanceSettingsValue,
   selectTabState,
 } from '../../global/selectors';
+import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import { isUserId } from '../../util/entities/ids';
 import selectViewableMedia from './helpers/getViewableMedia';
 
@@ -146,6 +150,23 @@ const MediaViewerActions = ({
     } else {
       downloadMedia({ media, originMessage: message });
     }
+  });
+
+  // The detached window plays what the viewer already has, so it needs no loading of its own
+  const handleOpenInWindow = useLastCallback(() => {
+    if (!mediaData || !media) return;
+
+    const dimensions = media.mediaType === 'photo'
+      ? getPhotoFullDimensions(media)
+      : media.mediaType === 'video' ? getVideoDimensions(media) : undefined;
+
+    void window.tauri.openMediaWindow({
+      src: new URL(mediaData, window.location.href).href,
+      title: fileName ? `${fileName} — ${APP_NAME}` : APP_NAME,
+      isVideo,
+      width: dimensions?.width,
+      height: dimensions?.height,
+    }).then(onCloseMediaViewer).catch(() => undefined);
   });
 
   const handleZoomOut = useLastCallback(() => {
@@ -401,6 +422,16 @@ const MediaViewerActions = ({
         />
       )}
       {renderDownloadButton()}
+      {IS_TAURI && mediaData && !isProtected && item?.type !== 'sponsoredMessage' && (
+        <Button
+          round
+          size="smaller"
+          color="translucent-white"
+          ariaLabel={lang('NoirgramMediaOpenInWindow')}
+          onClick={handleOpenInWindow}
+          iconName="open-in-new-tab"
+        />
+      )}
       <Button
         round
         size="smaller"

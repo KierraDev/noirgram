@@ -1,4 +1,11 @@
-import type { TauriDesktopSettings, TauriDownloadSettings, TauriProxySettings } from '../../types/tauri';
+import type {
+  TauriDesktopSettings,
+  TauriDownloadSettings,
+  TauriMediaWindowOptions,
+  TauriNativeNotification,
+  TauriNotificationsSetting,
+  TauriProxySettings,
+} from '../../types/tauri';
 
 import { IS_MAC_OS } from '../browser/windowEnvironment';
 
@@ -95,6 +102,42 @@ export default function initTauriApi() {
     return normalizeDesktopSettings(await core.invoke<TauriDesktopSettings>('set_proxy', { proxy }));
   }
 
+  async function isNativeNotificationsSupported() {
+    const core = await corePromise;
+    return core.invoke<boolean>('is_native_notifications_supported');
+  }
+
+  async function getNativeNotificationsSetting() {
+    const core = await corePromise;
+    return core.invoke<TauriNotificationsSetting>('get_native_notifications_setting');
+  }
+
+  async function showNativeNotification(notification: TauriNativeNotification, icon?: Uint8Array) {
+    const core = await corePromise;
+    return core.invoke<void>('show_native_notification', {
+      notification,
+      icon: icon ? Array.from(icon) : undefined,
+    });
+  }
+
+  async function closeNativeNotifications(chatId: string) {
+    const core = await corePromise;
+    return core.invoke<void>('close_native_notifications', { chatId });
+  }
+
+  // Raw bytes instead of JSON: files can be large
+  async function startFileDrag(data: Uint8Array, filename: string) {
+    const core = await corePromise;
+    return core.invoke<void>('start_file_drag', data, {
+      headers: { 'x-noirgram-filename': encodeURIComponent(filename) },
+    });
+  }
+
+  async function openMediaWindow(options: TauriMediaWindowOptions) {
+    const core = await corePromise;
+    return core.invoke<void>('open_media_window', options);
+  }
+
   async function openMiniAppWindow(label: string, url: string, title: string) {
     const core = await corePromise;
     return core.invoke<void>('open_mini_app_window', { label, url, title });
@@ -127,6 +170,12 @@ export default function initTauriApi() {
     setCloseToTray,
     setLaunchAtStartup,
     setProxy,
+    isNativeNotificationsSupported,
+    getNativeNotificationsSetting,
+    showNativeNotification,
+    closeNativeNotifications,
+    startFileDrag,
+    openMediaWindow,
     openMiniAppWindow,
     closeMiniAppWindow,
     sendMiniAppEvent,

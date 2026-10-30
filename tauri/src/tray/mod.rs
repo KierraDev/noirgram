@@ -108,7 +108,12 @@ fn tray_click_handler(tray: &TrayIcon, event: TrayIconEvent) {
 }
 
 fn handle_icon_click(app: &AppHandle, only_open: bool) {
-  let active_windows = app.windows();
+  // Mini app and media viewer windows come and go on their own
+  let active_windows: Vec<_> = app
+    .windows()
+    .into_iter()
+    .filter(|(label, _)| !crate::is_auxiliary_label(label))
+    .collect();
 
   if active_windows.is_empty() {
     // No open windows, restore with last URL.

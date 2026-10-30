@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-close-native-notifications"
+description = "Enables the close_native_notifications command without any pre-configured scope."
+commands.allow = ["close_native_notifications"]
+
+[[permission]]
+identifier = "deny-close-native-notifications"
+description = "Denies the close_native_notifications command without any pre-configured scope."
+commands.deny = ["close_native_notifications"]

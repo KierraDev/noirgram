@@ -17,6 +17,65 @@ body.ng-avatars-squircle .Avatar:not(.forum) {
   --radius: 30%;
 }
 
+// Accent swatches in Settings › Noirgram › Accent color
+.noirgram-accents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.noirgram-accent {
+  cursor: var(--custom-cursor, pointer);
+
+  position: relative;
+
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+
+  background: var(--accent-swatch);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+
+  transition: transform 220ms var(--ng-ease-spring);
+
+  // The selection ring sits outside with a gap of the island color, like iOS color pickers
+  &::after {
+    content: "";
+
+    position: absolute;
+    inset: -0.25rem;
+    transform: scale(0.85);
+
+    border: 2px solid var(--accent-swatch);
+    border-radius: 50%;
+
+    opacity: 0;
+
+    transition: opacity 160ms var(--ng-ease-out), transform 360ms var(--ng-ease-spring);
+  }
+
+  &:hover {
+    transform: scale(1.06);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &.is-selected::after {
+    transform: none;
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 0.375rem;
+  }
+}
+
 // Key caps in Settings › Noirgram › Keyboard shortcuts
 .noirgram-kbd {
   padding: 0.125rem 0.5rem;

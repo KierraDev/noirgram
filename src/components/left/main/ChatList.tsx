@@ -13,12 +13,15 @@ import {
   CHAT_LIST_SLICE,
   SAVED_FOLDER_ID,
 } from '../../../config';
+import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
 import { IS_TAURI } from '../../../util/browser/globalEnvironment';
 import { IS_APP, IS_MAC_OS } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import { getOrderKey, getPinnedChatsCount } from '../../../util/folderManager';
+import { getChatHeightPx } from '../../../util/noirgram/chatListDensity';
 import { ARCHIVE_ANIMATION_ID } from './hooks';
 
+import useSelector from '../../../hooks/data/useSelector';
 import usePeerStoriesPolling from '../../../hooks/polling/usePeerStoriesPolling';
 import useTopOverscroll from '../../../hooks/scroll/useTopOverscroll';
 import { useFolderManagerForOrderedIds } from '../../../hooks/useFolderManager';
@@ -102,7 +105,10 @@ const ChatList = ({
   const orderedIds = useFolderManagerForOrderedIds(resolvedFolderId);
   usePeerStoriesPolling(orderedIds);
 
-  const chatsHeight = (orderedIds?.length || 0) * CHAT_HEIGHT_PX;
+  const { chatListDensity } = useSelector(selectNoirgramSettings);
+  const chatHeight = getChatHeightPx(chatListDensity);
+  const chatsHeight = (orderedIds?.length || 0) * chatHeight;
+  // The archive row keeps its own height in every density
   const archiveHeight = shouldDisplayArchive
     ? archiveSettings?.isMinimized ? ARCHIVE_MINIMIZED_HEIGHT : CHAT_HEIGHT_PX : 0;
 
@@ -214,7 +220,7 @@ const ChatList = ({
       const isPinned = viewportOffset + i < pinnedCount;
       const offsetTop = noAbsolutePositioning
         ? undefined
-        : panesHeight + archiveHeight + (viewportOffset + i) * CHAT_HEIGHT_PX;
+        : panesHeight + archiveHeight + (viewportOffset + i) * chatHeight;
 
       return (
         <Chat

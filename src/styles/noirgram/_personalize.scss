@@ -1,0 +1,136 @@
+// Personalization from "Settings › Noirgram": accent color, chat list density, desktop-dense menus.
+
+@use "sass:color";
+@use "sass:list";
+
+// `rgb` triplets for the variables the app also reads as `rgba(var(--name-rgb), alpha)`
+@function rgb-triplet($value) {
+  $red: color.channel($value, "red", $space: rgb);
+  $green: color.channel($value, "green", $space: rgb);
+  $blue: color.channel($value, "blue", $space: rgb);
+
+  @return "#{$red}, #{$green}, #{$blue}";
+}
+
+// Accent: [light theme, dark theme, own bubbles and selection in the dark theme].
+// Light values keep 4.5:1 on white, the deep ones keep 4.5:1 under white text.
+$accents: (
+  violet: (#5f50c9, #a99bf0, #5b4bae),
+  teal: (#187a75, #6fd3c8, #24706b),
+  rose: (#b83d66, #f09ab5, #96385a),
+  amber: (#9a5a0b, #f0b868, #8a571c),
+  green: (#2f7a3d, #8cd49a, #3a7445),
+  silver: (#535b69, #d5d6d8, #4a505c),
+);
+
+@each $name, $colors in $accents {
+  body[data-ng-accent="#{$name}"] {
+    --ng-accent: #{list.nth($colors, 1)};
+    --ng-accent-deep: #{list.nth($colors, 1)};
+    --color-primary-shade-rgb: #{rgb-triplet(list.nth($colors, 1))};
+    --color-accent-own-rgb: #{rgb-triplet(list.nth($colors, 1))};
+  }
+
+  html.theme-dark body[data-ng-accent="#{$name}"] {
+    --ng-accent: #{list.nth($colors, 2)};
+    --ng-accent-deep: #{list.nth($colors, 3)};
+    --color-primary-shade-rgb: #{rgb-triplet(list.nth($colors, 2))};
+    --color-accent-own-rgb: 255, 255, 255;
+  }
+}
+
+body[data-ng-accent] {
+  --color-primary: var(--ng-accent);
+  --color-primary-shade: color-mix(in srgb, var(--ng-accent) 88%, black);
+  --color-primary-opacity: color-mix(in srgb, var(--ng-accent) 12%, transparent);
+  --color-primary-opacity-hover: color-mix(in srgb, var(--ng-accent) 25%, transparent);
+  --color-primary-tint: color-mix(in srgb, var(--ng-accent) 10%, transparent);
+  --color-links: var(--ng-accent);
+  --color-chat-active: var(--ng-accent-deep);
+  --color-chat-active-greyed: color-mix(in srgb, var(--ng-accent-deep) 70%, var(--color-background));
+
+  // Light theme: own bubbles are a pale tint with accent text and links
+  --color-background-own: color-mix(in srgb, var(--ng-accent) 14%, white);
+  --color-background-own-apple: var(--color-background-own);
+  --color-background-own-selected: color-mix(in srgb, var(--ng-accent) 24%, white);
+  --color-accent-own: var(--ng-accent);
+  --color-message-meta-own: var(--ng-accent);
+  --color-own-links: color-mix(in srgb, var(--ng-accent) 85%, black);
+  --color-code-own: color-mix(in srgb, var(--ng-accent) 85%, black);
+  --color-reply-own-hover: color-mix(in srgb, var(--ng-accent) 22%, white);
+  --color-reply-own-hover-apple: var(--color-reply-own-hover);
+  --color-reply-own-active: color-mix(in srgb, var(--ng-accent) 28%, white);
+  --color-reply-own-active-apple: var(--color-reply-own-active);
+  --color-message-reaction-own: color-mix(in srgb, var(--ng-accent) 24%, white);
+  --color-message-reaction-hover-own: color-mix(in srgb, var(--ng-accent) 32%, white);
+  --color-voice-transcribe-button-own: var(--color-message-reaction-own);
+}
+
+// Dark theme: own bubbles are the deep accent with white text, like the brand blue
+html.theme-dark body[data-ng-accent] {
+  --color-background-own: var(--ng-accent-deep);
+  --color-background-own-selected: color-mix(in srgb, var(--ng-accent-deep) 82%, black);
+  --color-accent-own: #ffffff;
+  --color-message-meta-own: rgba(255, 255, 255, 0.6);
+  --color-own-links: #ffffff;
+  --color-code-own: #ffffff;
+  --color-reply-own-hover: color-mix(in srgb, var(--ng-accent-deep) 85%, white);
+  --color-reply-own-active: color-mix(in srgb, var(--ng-accent-deep) 78%, white);
+  --color-message-reaction-own: color-mix(in srgb, var(--ng-accent-deep) 85%, white);
+  --color-message-reaction-hover-own: color-mix(in srgb, var(--ng-accent-deep) 75%, black);
+}
+
+// Chat list density. Rows are virtualized by a fixed height (`util/noirgram/chatListDensity.ts`),
+// so the row is pinned to exactly that height here.
+@mixin chat-row($height) {
+  .chat-list .Chat:not(.standalone) .ListItem-button {
+    align-items: center;
+    height: $height;
+    padding-block: 0;
+  }
+}
+
+body.ng-density-compact {
+  @include chat-row(60px);
+
+  .chat-list .Chat:not(.standalone) {
+    .info-row {
+      line-height: 1.25rem;
+    }
+
+    .subtitle {
+      height: 1.25rem;
+    }
+  }
+}
+
+body.ng-density-large {
+  @include chat-row(80px);
+
+  .chat-list .Chat:not(.standalone) .Avatar {
+    margin-inline-end: 0.75rem;
+  }
+}
+
+// Desktop-dense menus, like in Telegram Desktop: shorter rows, smaller icons
+@media (pointer: fine) {
+  body .Menu .MenuItem:not(.compact) {
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+
+    .icon {
+      margin-right: 1rem;
+      font-size: 1.25rem;
+    }
+
+    .menu-item-name {
+      margin-right: 1rem;
+    }
+
+    &[dir="rtl"] .icon {
+      margin-right: 0;
+      margin-left: 1rem;
+    }
+  }
+}

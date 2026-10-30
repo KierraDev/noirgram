@@ -14,6 +14,8 @@ mod deeplink;
 use deeplink::Deeplink;
 
 mod desktop;
+mod file_drag;
+mod notifications;
 
 mod tray;
 mod window;
@@ -64,6 +66,12 @@ pub static TRAFFIC_LIGHT_POSITION_OVERLAY_MOBILE: LazyLock<LogicalPosition<f64>>
 });
 
 const MINI_APP_LABEL_PREFIX: &str = "miniapp-";
+const MEDIA_WINDOW_LABEL_PREFIX: &str = "media-";
+const MEDIA_VIEWER_PATH: &str = "/media-viewer.html";
+const MEDIA_WINDOW_MIN_WIDTH: f64 = 320.0;
+const MEDIA_WINDOW_MIN_HEIGHT: f64 = 240.0;
+// Share of the screen the detached viewer may take initially
+const MEDIA_WINDOW_SCREEN_SHARE: f64 = 0.85;
 const MINI_APP_BRIDGE_SCRIPT: &str = include_str!("mini_app_bridge.js");
 const DOWNLOADS_SUBDIRECTORY: &str = "Noirgram";
 const DOWNLOAD_SETTINGS_FILE: &str = "download-settings.json";
@@ -165,7 +173,7 @@ pub fn run() {
       let app_window = app
         .webview_windows()
         .into_iter()
-        .find(|(label, _)| !is_mini_app_label(label))
+        .find(|(label, _)| !is_auxiliary_label(label))
         .map(|(_, window)| window);
 
       match app_window {
@@ -211,7 +219,7 @@ pub fn run() {
 
   let app = app.on_window_event(|window, event| match event {
     tauri::WindowEvent::CloseRequested { api, .. } => {
-      if is_mini_app_label(window.label()) {
+      if is_auxiliary_label(window.label()) {
         return;
       }
 
@@ -219,7 +227,7 @@ pub fn run() {
         .app_handle()
         .windows()
         .keys()
-        .filter(|label| !is_mini_app_label(label))
+        .filter(|label| !is_auxiliary_label(label))
         .count();
 
       if app_windows_count == 1 {
@@ -293,6 +301,8 @@ pub fn run() {
     }
     // Before the first window: the proxy is part of the WebView2 environment
     desktop::init(app.handle());
+    notifications::init(app.handle());
+    file_drag::init();
 
     let _main_window = open_window(
       app.handle().clone(),
@@ -335,6 +345,12 @@ pub fn run() {
     desktop::set_close_to_tray,
     desktop::set_launch_at_startup,
     desktop::set_proxy,
+    notifications::is_native_notifications_supported,
+    notifications::get_native_notifications_setting,
+    notifications::show_native_notification,
+    notifications::close_native_notifications,
+    file_drag::start_file_drag,
+    open_media_window,
     open_mini_app_window,
     close_mini_app_window,
     mini_app_send_event,
@@ -831,6 +847,86 @@ fn is_mini_app_label(label: &str) -> bool {
   label.strip_prefix(MINI_APP_LABEL_PREFIX).is_some_and(|id| {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|char| char.is_ascii_alphanumeric() || char == '-')
   })
+}
+
+fn is_media_window_label(label: &str) -> bool {
+  label.starts_with(MEDIA_WINDOW_LABEL_PREFIX)
+}
+
+// Windows that are not the app itself: closing them never hides the app to the tray
+pub(crate) fn is_auxiliary_label(label: &str) -> bool {
+  is_mini_app_label(label) || is_media_window_label(label)
+}
+
+// Media from a chat in its own window, like the Telegram Desktop viewer: it can sit on another screen
+// while the chat goes on. `src` is the media the app already has: a blob or a streamed (Service Worker)
+// URL of the app origin, played by the viewer page without its own Telegram connection.
+#[tauri::command]
+async fn open_media_window(
+  app: tauri::AppHandle,
+  window: tauri::WebviewWindow,
+  src: String,
+  title: String,
+  is_video: bool,
+  width: Option<f64>,
+  height: Option<f64>,
+) -> Result<(), String> {
+  let base_url = Url::parse(&BASE_URL).map_err(|err| err.to_string())?;
+  let media_url = Url::parse(&src).map_err(|err| err.to_string())?;
+  // `blob:http://localhost:47833/<uuid>` carries the origin inside
+  let media_origin_url = match media_url.scheme() {
+    "blob" => Url::parse(media_url.path()).map_err(|err| err.to_string())?,
+    _ => media_url.clone(),
+  };
+  if !is_allowed_app_url(&media_origin_url, &base_url) {
+    return Err("Unsupported media URL".into());
+  }
+
+  let mut viewer_url = base_url.join(MEDIA_VIEWER_PATH).map_err(|err| err.to_string())?;
+  viewer_url
+    .query_pairs_mut()
+    .append_pair("src", media_url.as_str())
+    .append_pair("type", if is_video { "video" } else { "photo" });
+
+  // Fit the media into most of the current screen, keeping its aspect ratio
+  let scale_factor = window.scale_factor().unwrap_or(1.0);
+  let (max_width, max_height) = window
+    .current_monitor()
+    .ok()
+    .flatten()
+    .map(|monitor| {
+      let size = monitor.work_area().size.to_logical::<f64>(scale_factor);
+      (size.width * MEDIA_WINDOW_SCREEN_SHARE, size.height * MEDIA_WINDOW_SCREEN_SHARE)
+    })
+    .unwrap_or((WINDOW_WIDTH, WINDOW_HEIGHT));
+  let (media_width, media_height) = match (width, height) {
+    (Some(width), Some(height)) if width > 0.0 && height > 0.0 => (width, height),
+    _ => (max_width, max_height),
+  };
+  let fit = (max_width / media_width).min(max_height / media_height).min(1.0);
+  let window_width = (media_width * fit).max(MEDIA_WINDOW_MIN_WIDTH);
+  let window_height = (media_height * fit).max(MEDIA_WINDOW_MIN_HEIGHT);
+
+  let label = format!("{MEDIA_WINDOW_LABEL_PREFIX}{}", Uuid::new_v4());
+  let webview_url = if should_serve_bundled_frontend() {
+    tauri::WebviewUrl::External(viewer_url)
+  } else {
+    tauri::WebviewUrl::App(viewer_url.to_string().into())
+  };
+
+  tauri::WebviewWindowBuilder::new(&app, label, webview_url)
+    .title(title)
+    .inner_size(window_width, window_height)
+    .min_inner_size(MEDIA_WINDOW_MIN_WIDTH, MEDIA_WINDOW_MIN_HEIGHT)
+    .resizable(true)
+    .center()
+    .theme(Some(tauri::Theme::Dark))
+    .additional_browser_args(desktop::get_browser_args())
+    .disable_drag_drop_handler()
+    .on_navigation(move |url| url.path() == MEDIA_VIEWER_PATH && is_allowed_app_url(url, &base_url))
+    .build()
+    .map(|_| ())
+    .map_err(|err| err.to_string())
 }
 
 fn get_mini_app_owner(label: &str) -> Option<String> {

@@ -1,7 +1,7 @@
 import {
   useCallback, useLayoutEffect, useMemo, useRef,
 } from '../../../../lib/teact/teact';
-import { getActions } from '../../../../global';
+import { getActions, getGlobal } from '../../../../global';
 
 import type {
   ApiChat, ApiDraft, ApiMessage, ApiPeer, ApiTopic, ApiTypingStatus,
@@ -10,7 +10,6 @@ import type {
 import type { ObserveFn } from '../../../../hooks/useIntersectionObserver';
 import type { CommunityMember } from './useCommunityMembers';
 
-import { CHAT_HEIGHT_PX } from '../../../../config';
 import { requestMutation } from '../../../../lib/fasterdom/fasterdom';
 import {
   getMessageIsSpoiler,
@@ -20,9 +19,11 @@ import {
   isChatCommunity,
 } from '../../../../global/helpers';
 import { getMessageSenderName } from '../../../../global/helpers/peers';
+import { selectNoirgramSettings } from '../../../../global/selectors/sharedState';
 import { waitStartingTransitionsEnd } from '../../../../util/animations/waitTransitionEnd';
 import buildClassName from '../../../../util/buildClassName';
 import { isUserId } from '../../../../util/entities/ids';
+import { getChatHeightPx } from '../../../../util/noirgram/chatListDensity';
 import renderText from '../../../common/helpers/renderText';
 import { renderTextWithEntities } from '../../../common/helpers/renderTextWithEntities';
 import { ChatAnimationTypes } from './useChatAnimationType';
@@ -275,7 +276,8 @@ export default function useChatListEntry({
     }
 
     if (animationType === ChatAnimationTypes.Move) {
-      element.style.transform = `translate3d(0, ${-orderDiff * CHAT_HEIGHT_PX - shiftDiff}px, 0)`;
+      const chatHeight = getChatHeightPx(selectNoirgramSettings(getGlobal()).chatListDensity);
+      element.style.transform = `translate3d(0, ${-orderDiff * chatHeight - shiftDiff}px, 0)`;
 
       requestMutation(() => {
         if (isCancelled) return;

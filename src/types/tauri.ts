@@ -24,6 +24,37 @@ export type TauriDesktopSettings = {
   activeProxy?: string;
 };
 
+export type TauriNativeNotification = {
+  chatId: string;
+  messageId?: number;
+  title: string;
+  body: string;
+  iconKey?: string;
+  isSilent: boolean;
+  // Without labels the toast has no reply box and buttons
+  replyPlaceholder?: string;
+  replyLabel?: string;
+  readLabel?: string;
+};
+
+// Whether Windows lets the app show toasts at all
+export type TauriNotificationsSetting = 'enabled' | 'disabled' | 'disabledByPolicy' | 'unknown';
+
+export type TauriNotificationAction = {
+  action: 'open' | 'reply' | 'read';
+  chatId: string;
+  messageId?: number;
+  text?: string;
+};
+
+export type TauriMediaWindowOptions = {
+  src: string;
+  title: string;
+  isVideo: boolean;
+  width?: number;
+  height?: number;
+};
+
 type TauriApi = {
   version: string;
   markTitleBarOverlay: (isOverlay: boolean, isMobile?: boolean) => Promise<void>;
@@ -44,6 +75,12 @@ type TauriApi = {
   setCloseToTray: (shouldCloseToTray: boolean) => Promise<TauriDesktopSettings>;
   setLaunchAtStartup: (shouldLaunchAtStartup: boolean) => Promise<TauriDesktopSettings>;
   setProxy: (proxy?: TauriProxySettings) => Promise<TauriDesktopSettings>;
+  isNativeNotificationsSupported: () => Promise<boolean>;
+  getNativeNotificationsSetting: () => Promise<TauriNotificationsSetting>;
+  showNativeNotification: (notification: TauriNativeNotification, icon?: Uint8Array) => Promise<void>;
+  closeNativeNotifications: (chatId: string) => Promise<void>;
+  startFileDrag: (data: Uint8Array, filename: string) => Promise<void>;
+  openMediaWindow: (options: TauriMediaWindowOptions) => Promise<void>;
   openMiniAppWindow: (label: string, url: string, title: string) => Promise<void>;
   closeMiniAppWindow: (label: string) => Promise<void>;
   sendMiniAppEvent: (label: string, eventType: string, eventData?: unknown) => Promise<void>;

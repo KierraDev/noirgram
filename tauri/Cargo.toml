@@ -38,6 +38,18 @@ tauri-plugin-os = "2.4.0"
 
 [target."cfg(any(target_os = \"macos\", windows, target_os = \"linux\"))".dependencies]
 tauri-plugin-single-instance = { version = "2.5.2", features = ["deep-link"] }
+drag = "2.1.0"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+  "Data_Xml_Dom",
+  "Foundation",
+  "Foundation_Collections",
+  "UI_Notifications",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging",
+] }
+windows-registry = "0.6"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.27.0"

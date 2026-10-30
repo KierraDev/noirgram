@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-is-native-notifications-supported"
+description = "Enables the is_native_notifications_supported command without any pre-configured scope."
+commands.allow = ["is_native_notifications_supported"]
+
+[[permission]]
+identifier = "deny-is-native-notifications-supported"
+description = "Denies the is_native_notifications_supported command without any pre-configured scope."
+commands.deny = ["is_native_notifications_supported"]

@@ -2223,6 +2223,12 @@
           "markdownDescription": "Enables the close_mini_app_window command without any pre-configured scope."
         },
         {
+          "description": "Enables the close_native_notifications command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-native-notifications",
+          "markdownDescription": "Enables the close_native_notifications command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_desktop_settings command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-desktop-settings",
@@ -2233,6 +2239,18 @@
           "type": "string",
           "const": "allow-get-download-settings",
           "markdownDescription": "Enables the get_download_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_native_notifications_setting command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-native-notifications-setting",
+          "markdownDescription": "Enables the get_native_notifications_setting command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the is_native_notifications_supported command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-is-native-notifications-supported",
+          "markdownDescription": "Enables the is_native_notifications_supported command without any pre-configured scope."
         },
         {
           "description": "Enables the mark_title_bar_overlay command without any pre-configured scope.",
@@ -2257,6 +2275,12 @@
           "type": "string",
           "const": "allow-open-downloads-folder",
           "markdownDescription": "Enables the open_downloads_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_media_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-media-window",
+          "markdownDescription": "Enables the open_media_window command without any pre-configured scope."
         },
         {
           "description": "Enables the open_mini_app_window command without any pre-configured scope.",
@@ -2337,6 +2361,18 @@
           "markdownDescription": "Enables the set_window_title command without any pre-configured scope."
         },
         {
+          "description": "Enables the show_native_notification command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-show-native-notification",
+          "markdownDescription": "Enables the show_native_notification command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the start_file_drag command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-start-file-drag",
+          "markdownDescription": "Enables the start_file_drag command without any pre-configured scope."
+        },
+        {
           "description": "Denies the choose_download_directory command without any pre-configured scope.",
           "type": "string",
           "const": "deny-choose-download-directory",
@@ -2349,6 +2385,12 @@
           "markdownDescription": "Denies the close_mini_app_window command without any pre-configured scope."
         },
         {
+          "description": "Denies the close_native_notifications command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-native-notifications",
+          "markdownDescription": "Denies the close_native_notifications command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_desktop_settings command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-desktop-settings",
@@ -2359,6 +2401,18 @@
           "type": "string",
           "const": "deny-get-download-settings",
           "markdownDescription": "Denies the get_download_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_native_notifications_setting command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-native-notifications-setting",
+          "markdownDescription": "Denies the get_native_notifications_setting command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the is_native_notifications_supported command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-is-native-notifications-supported",
+          "markdownDescription": "Denies the is_native_notifications_supported command without any pre-configured scope."
         },
         {
           "description": "Denies the mark_title_bar_overlay command without any pre-configured scope.",
@@ -2383,6 +2437,12 @@
           "type": "string",
           "const": "deny-open-downloads-folder",
           "markdownDescription": "Denies the open_downloads_folder command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_media_window command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-media-window",
+          "markdownDescription": "Denies the open_media_window command without any pre-configured scope."
         },
         {
           "description": "Denies the open_mini_app_window command without any pre-configured scope.",
@@ -2461,6 +2521,18 @@
           "type": "string",
           "const": "deny-set-window-title",
           "markdownDescription": "Denies the set_window_title command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the show_native_notification command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-show-native-notification",
+          "markdownDescription": "Denies the show_native_notification command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the start_file_drag command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-start-file-drag",
+          "markdownDescription": "Denies the start_file_drag command without any pre-configured scope."
         },
         {
           "description": "This permission set configures if your\napplication can enable or disable auto\nstarting the application on boot.\n\n#### Granted Permissions\n\nIt allows all to check, enable and\ndisable the automatic start on boot.\n\n\n#### This default permission set includes:\n\n- `allow-enable`\n- `allow-disable`\n- `allow-is-enabled`",

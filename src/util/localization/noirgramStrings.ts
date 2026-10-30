@@ -5,7 +5,7 @@ import type { LangKey } from '../../types/language';
 const NOIRGRAM_STRINGS: Record<string, Partial<Record<LangKey, string>>> = {
   ru: {
     NoirgramSettings: 'Noirgram',
-    NoirgramSettingsDesc: 'Функции клиента, прокси, загрузки и горячие клавиши',
+    NoirgramSettingsDesc: 'Акцент, список чатов, прокси, загрузки, обновления',
     NoirgramSectionInterface: 'Интерфейс',
     NoirgramHideStories: 'Скрыть истории',
     NoirgramHideStoriesDesc: 'Убрать ленту историй над списком чатов',
@@ -67,6 +67,34 @@ const NOIRGRAM_STRINGS: Record<string, Partial<Record<LangKey, string>>> = {
     NoirgramShortcutQuit: 'Выйти из Noirgram',
     NoirgramMiniAppInWindow: 'Мини-приложение открыто в отдельном окне',
     NoirgramMiniAppShowWindow: 'Показать окно',
+    NoirgramNotificationReplyPlaceholder: 'Напишите ответ…',
+    NoirgramNotificationsBlocked: 'Уведомления Windows выключены для Noirgram. '
+      + 'Включите их в Параметрах Windows › Система › Уведомления.',
+    NoirgramNotificationsBlockedByPolicy: 'Уведомления Windows выключены для всех приложений системной политикой '
+      + '(«Отключить всплывающие уведомления» в групповой политике). Пока она включена, Noirgram не может '
+      + 'показывать сообщения.',
+    NoirgramMediaOpenInWindow: 'Открыть в отдельном окне',
+    NoirgramSectionAccent: 'Цвет акцента',
+    NoirgramAccentNoir: 'Нуар-синий',
+    NoirgramAccentViolet: 'Фиолетовый',
+    NoirgramAccentTeal: 'Бирюзовый',
+    NoirgramAccentRose: 'Розовый',
+    NoirgramAccentAmber: 'Янтарный',
+    NoirgramAccentGreen: 'Зелёный',
+    NoirgramAccentSilver: 'Серебро',
+    NoirgramSectionChatList: 'Список чатов',
+    NoirgramDensityCompact: 'Компактный',
+    NoirgramDensityCompactDesc: 'Больше чатов на экране, как в Telegram Desktop',
+    NoirgramDensityDefault: 'Стандартный',
+    NoirgramDensityLarge: 'Крупный',
+    NoirgramDensityLargeDesc: 'Крупные аватары и больше воздуха, как в Swiftgram',
+    NoirgramSectionUpdates: 'Обновления',
+    NoirgramUpdateCheck: 'Проверить обновления',
+    NoirgramUpdateLatest: 'Установлена последняя версия',
+    NoirgramUpdateUnavailable: 'В этой сборке нет канала обновлений',
+    NoirgramUpdateInstall: 'Установить Noirgram {version}',
+    NoirgramUpdateInstalling: 'Устанавливается Noirgram {version}…',
+    NoirgramUpdateVersion: 'Noirgram {version}',
   },
 };
 

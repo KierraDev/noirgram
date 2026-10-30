@@ -3438,6 +3438,28 @@ export interface LangPair {
   'NoirgramShowInFolder': undefined;
   'NoirgramMiniAppInWindow': undefined;
   'NoirgramMiniAppShowWindow': undefined;
+  'NoirgramNotificationReplyPlaceholder': undefined;
+  'NoirgramNotificationsBlocked': undefined;
+  'NoirgramNotificationsBlockedByPolicy': undefined;
+  'NoirgramMediaOpenInWindow': undefined;
+  'NoirgramSectionAccent': undefined;
+  'NoirgramAccentNoir': undefined;
+  'NoirgramAccentViolet': undefined;
+  'NoirgramAccentTeal': undefined;
+  'NoirgramAccentRose': undefined;
+  'NoirgramAccentAmber': undefined;
+  'NoirgramAccentGreen': undefined;
+  'NoirgramAccentSilver': undefined;
+  'NoirgramSectionChatList': undefined;
+  'NoirgramDensityCompact': undefined;
+  'NoirgramDensityCompactDesc': undefined;
+  'NoirgramDensityDefault': undefined;
+  'NoirgramDensityLarge': undefined;
+  'NoirgramDensityLargeDesc': undefined;
+  'NoirgramSectionUpdates': undefined;
+  'NoirgramUpdateCheck': undefined;
+  'NoirgramUpdateLatest': undefined;
+  'NoirgramUpdateUnavailable': undefined;
 }
 
 export interface LangPairWithVariables<V = LangVariable> {
@@ -5694,6 +5716,15 @@ export interface LangPairWithVariables<V = LangVariable> {
   'NoirgramDownloadSaved': {
     'file': V;
   };
+  'NoirgramUpdateInstall': {
+    'version': V;
+  };
+  'NoirgramUpdateInstalling': {
+    'version': V;
+  };
+  'NoirgramUpdateVersion': {
+    'version': V;
+  };
 }
 
 export interface LangPairPlural {
@@ -7930,6 +7961,13 @@ export interface LangKeyGroups {
     keys:
       | 'NoirgramDownloadSaved';
     variables: 'file';
+  };
+  'version': {
+    keys:
+      | 'NoirgramUpdateInstall'
+      | 'NoirgramUpdateInstalling'
+      | 'NoirgramUpdateVersion';
+    variables: 'version';
   };
 }
 

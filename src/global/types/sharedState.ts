@@ -42,6 +42,8 @@ export interface SharedSettings {
 }
 
 export type NoirgramAvatarShape = 'circle' | 'squircle';
+export type NoirgramAccent = 'noir' | 'violet' | 'teal' | 'rose' | 'amber' | 'green' | 'silver';
+export type NoirgramChatListDensity = 'compact' | 'default' | 'large';
 
 // Client-side tweaks in the spirit of Swiftgram / exteraGram
 export interface NoirgramSettings {
@@ -50,4 +52,6 @@ export interface NoirgramSettings {
   shouldShowPeerId?: boolean;
   shouldHideTypingStatus?: boolean;
   avatarShape?: NoirgramAvatarShape;
+  accent?: NoirgramAccent;
+  chatListDensity?: NoirgramChatListDensity;
 }

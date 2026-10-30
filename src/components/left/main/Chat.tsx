@@ -44,15 +44,17 @@ import {
   selectUser,
   selectUserStatus,
 } from '../../../global/selectors';
+import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
 import { selectDraft, selectThreadLocalStateParam } from '../../../global/selectors/threads';
 import { IS_OPEN_IN_NEW_TAB_SUPPORTED } from '../../../util/browser/windowEnvironment';
 import buildClassName from '../../../util/buildClassName';
 import { formatCountdown } from '../../../util/dates/duration';
 import { isUserId } from '../../../util/entities/ids';
 import { getChatFolderIds } from '../../../util/folderManager';
+import { getChatAvatarSize } from '../../../util/noirgram/chatListDensity';
 import { createLocationHash } from '../../../util/routing';
 
-import { useSelectorSignal, useShallowSelector } from '../../../hooks/data/useSelector';
+import useSelector, { useSelectorSignal, useShallowSelector } from '../../../hooks/data/useSelector';
 import useAppLayout from '../../../hooks/useAppLayout';
 import useChatContextActions from '../../../hooks/useChatContextActions';
 import useEnsureMessage from '../../../hooks/useEnsureMessage';
@@ -189,6 +191,7 @@ const Chat = ({
   } = getActions();
 
   const lang = useLang();
+  const { chatListDensity } = useSelector(selectNoirgramSettings);
 
   // The row itself acts on the same fast-click phase, so a plain `onClick` here
   // would let the chat open first and delay the panel
@@ -481,7 +484,7 @@ const Chat = ({
             peer={avatarPeer}
             isSavedMessages={user?.isSelf}
             isSavedDialog={isSavedDialog}
-            size={isPreview ? 'medium' : 'large'}
+            size={isPreview ? 'medium' : offsetTop !== undefined ? getChatAvatarSize(chatListDensity) : 'large'}
             asMessageBubble={isMonoforum}
             withStory={!user?.isSelf && !isMonoforum}
             withStoryGap={isAvatarOnlineShown || Boolean(chat.subscriptionUntil) || shouldShowAutoDeleteBadge}

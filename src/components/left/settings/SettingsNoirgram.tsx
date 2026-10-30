@@ -1,11 +1,15 @@
 import { memo, useMemo } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
-import type { NoirgramAvatarShape, NoirgramSettings } from '../../../global/types/sharedState';
+import type {
+  NoirgramAccent, NoirgramAvatarShape, NoirgramChatListDensity, NoirgramSettings,
+} from '../../../global/types/sharedState';
+import type { RegularLangKey } from '../../../types/language';
 import type { IRadioOption } from '../../ui/RadioGroup';
 
 import { selectNoirgramSettings } from '../../../global/selectors/sharedState';
 import { IS_TAURI } from '../../../util/browser/globalEnvironment';
+import buildClassName from '../../../util/buildClassName';
 
 import useSelector from '../../../hooks/data/useSelector';
 import useHistoryBack from '../../../hooks/useHistoryBack';
@@ -22,7 +26,18 @@ type OwnProps = {
   onReset: () => void;
 };
 
-type ToggleKey = Exclude<keyof NoirgramSettings, 'avatarShape'>;
+type ToggleKey = Exclude<keyof NoirgramSettings, 'avatarShape' | 'accent' | 'chatListDensity'>;
+
+// Swatch colors only; the theme values live in `styles/noirgram/_personalize.scss`
+const ACCENTS: { value: NoirgramAccent; color: string; labelKey: RegularLangKey }[] = [
+  { value: 'noir', color: '#87a6df', labelKey: 'NoirgramAccentNoir' },
+  { value: 'violet', color: '#8c7be6', labelKey: 'NoirgramAccentViolet' },
+  { value: 'teal', color: '#3fb3ab', labelKey: 'NoirgramAccentTeal' },
+  { value: 'rose', color: '#e0709a', labelKey: 'NoirgramAccentRose' },
+  { value: 'amber', color: '#e0a040', labelKey: 'NoirgramAccentAmber' },
+  { value: 'green', color: '#5db56e', labelKey: 'NoirgramAccentGreen' },
+  { value: 'silver', color: '#a9adb5', labelKey: 'NoirgramAccentSilver' },
+];
 
 const SettingsNoirgram = ({
   isActive,
@@ -48,9 +63,25 @@ const SettingsNoirgram = ({
     updateNoirgramSettings({ [name as ToggleKey]: checked });
   });
 
+  const densityOptions: IRadioOption<NoirgramChatListDensity>[] = useMemo(() => [
+    { label: lang('NoirgramDensityCompact'), subLabel: lang('NoirgramDensityCompactDesc'), value: 'compact' },
+    { label: lang('NoirgramDensityDefault'), value: 'default' },
+    { label: lang('NoirgramDensityLarge'), subLabel: lang('NoirgramDensityLargeDesc'), value: 'large' },
+  ], [lang]);
+
   const handleAvatarShapeChange = useLastCallback((value: string) => {
     updateNoirgramSettings({ avatarShape: value as NoirgramAvatarShape });
   });
+
+  const handleDensityChange = useLastCallback((value: string) => {
+    updateNoirgramSettings({ chatListDensity: value as NoirgramChatListDensity });
+  });
+
+  const handleAccentClick = useLastCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    updateNoirgramSettings({ accent: e.currentTarget.dataset.accent as NoirgramAccent });
+  });
+
+  const currentAccent = settings.accent || 'noir';
 
   function renderToggle(key: ToggleKey, label: string, subLabel: string) {
     return (
@@ -68,6 +99,36 @@ const SettingsNoirgram = ({
 
   return (
     <div className="settings-content custom-scroll">
+      <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionAccent')}</IslandTitle>
+      <Island>
+        <div className="noirgram-accents" role="radiogroup" aria-label={lang('NoirgramSectionAccent')}>
+          {ACCENTS.map(({ value, color, labelKey }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={currentAccent === value}
+              aria-label={lang(labelKey)}
+              title={lang(labelKey)}
+              data-accent={value}
+              className={buildClassName('noirgram-accent', currentAccent === value && 'is-selected')}
+              style={`--accent-swatch: ${color}`}
+              onClick={handleAccentClick}
+            />
+          ))}
+        </div>
+      </Island>
+
+      <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionChatList')}</IslandTitle>
+      <Island>
+        <RadioGroup
+          name="noirgram-chat-list-density"
+          options={densityOptions}
+          selected={settings.chatListDensity || 'default'}
+          onChange={handleDensityChange}
+        />
+      </Island>
+
       <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionInterface')}</IslandTitle>
       <Island>
         {renderToggle('shouldHideStories', lang('NoirgramHideStories'), lang('NoirgramHideStoriesDesc'))}

@@ -37,6 +37,11 @@ import { callApi } from '../api/gramjs';
 import { IS_TAURI } from './browser/globalEnvironment';
 import { IS_SERVICE_WORKER_SUPPORTED, IS_TOUCH_ENV } from './browser/windowEnvironment';
 import jsxToHtml from './element/jsxToHtml';
+import {
+  checkIfNativeNotificationsSupported,
+  closeNativeNotificationsIfRead,
+  showNativeNotification,
+} from './tauri/nativeNotifications';
 import { buildCollectionByKey } from './iteratees';
 import { getTranslationFn } from './localization';
 import * as mediaLoader from './mediaLoader';
@@ -410,6 +415,17 @@ export async function notifyAboutCall({
 
   const icon = await getAvatar(user);
 
+  if (IS_TAURI && await checkIfNativeNotificationsSupported()) {
+    const avatarHash = getChatAvatarHash(user);
+    void showNativeNotification({
+      chatId: user.id,
+      title: getTranslationFn()('VoipIncoming'),
+      body: getUserFullName(getTranslationFn(), user) || '',
+      isSilent: false,
+    }, avatarHash && icon ? { hash: avatarHash, url: icon } : undefined).catch(() => undefined);
+    return;
+  }
+
   const options: NotificationOptions = {
     body: getUserFullName(getTranslationFn(), user),
     icon,
@@ -492,6 +508,22 @@ export async function notifyAboutMessage({
         },
       });
     }
+  } else if (IS_TAURI && await checkIfNativeNotificationsSupported()) {
+    const lang = getTranslationFn();
+    const avatarHash = getChatAvatarHash(chat);
+    // Reactions are about the user's own message, there is nothing to answer
+    const canAnswer = !isReaction && !getGlobal().passcode.isScreenLocked;
+
+    void showNativeNotification({
+      chatId: chat.id,
+      messageId: message.id,
+      title,
+      body,
+      isSilent: Boolean(isSilent || message.isSilent),
+      replyPlaceholder: canAnswer ? lang('NoirgramNotificationReplyPlaceholder') : undefined,
+      replyLabel: canAnswer ? lang('Send') : undefined,
+      readLabel: canAnswer ? lang('ChatListContextMarkAsRead') : undefined,
+    }, avatarHash && icon ? { hash: avatarHash, url: icon } : undefined).catch(() => undefined);
   } else {
     const dispatch = getActions();
     const options: NotificationOptions = {
@@ -530,6 +562,10 @@ export async function notifyAboutMessage({
 }
 
 export function closeMessageNotifications(payload: { chatId: string; lastReadInboxMessageId?: number }) {
+  if (IS_TAURI) {
+    closeNativeNotificationsIfRead(payload.chatId, payload.lastReadInboxMessageId);
+  }
+
   if (IS_TEST || !navigator.serviceWorker?.controller) return;
   navigator.serviceWorker.controller.postMessage({
     type: 'closeMessageNotifications',

@@ -1,10 +1,11 @@
 import type { ChangeEvent } from 'react';
+import type { Update } from '@tauri-apps/plugin-updater';
 import { memo, useEffect, useMemo, useState } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
 import type { RegularLangKey } from '../../../types/language';
 import type {
-  TauriDesktopSettings, TauriDownloadSettings, TauriProxyKind, TauriProxySettings,
+  TauriDesktopSettings, TauriDownloadSettings, TauriNotificationsSetting, TauriProxyKind, TauriProxySettings,
 } from '../../../types/tauri';
 import type { IRadioOption } from '../../ui/RadioGroup';
 
@@ -28,6 +29,10 @@ type ProxyDraft = {
   host: string;
   port: string;
 };
+
+type UpdateState =
+  | { status: 'idle' | 'checking' | 'latest' | 'unavailable' }
+  | { status: 'available' | 'installing'; update: Update };
 
 const DEFAULT_PROXY_DRAFT: ProxyDraft = {
   isEnabled: false,
@@ -66,11 +71,14 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
   const [desktopSettings, setDesktopSettings] = useState<TauriDesktopSettings | undefined>();
   const [proxyDraft, setProxyDraft] = useState<ProxyDraft>(DEFAULT_PROXY_DRAFT);
   const [proxyError, setProxyError] = useState<string | undefined>();
+  const [updateState, setUpdateState] = useState<UpdateState>({ status: 'idle' });
+  const [notificationsSetting, setNotificationsSetting] = useState<TauriNotificationsSetting | undefined>();
 
   useEffect(() => {
     if (!isActive) return;
 
     window.tauri.getDownloadSettings().then(setDownloadSettings).catch(() => undefined);
+    window.tauri.getNativeNotificationsSetting().then(setNotificationsSetting).catch(() => undefined);
     window.tauri.getDesktopSettings().then((settings) => {
       setDesktopSettings(settings);
       setProxyDraft(buildProxyDraft(settings.proxy));
@@ -159,6 +167,65 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
     });
   });
 
+  // Builds without the update channel (`npm run tauri:release`) have no updater, the check then fails
+  const handleCheckUpdate = useLastCallback(async () => {
+    setUpdateState({ status: 'checking' });
+    try {
+      const update = await window.tauri.checkUpdate();
+      setUpdateState(update ? { status: 'available', update } : { status: 'latest' });
+    } catch {
+      setUpdateState({ status: 'unavailable' });
+    }
+  });
+
+  const handleInstallUpdate = useLastCallback(async () => {
+    if (updateState.status !== 'available') return;
+
+    const { update } = updateState;
+    setUpdateState({ status: 'installing', update });
+    try {
+      await update.downloadAndInstall();
+      await window.tauri.relaunch();
+    } catch {
+      setUpdateState({ status: 'available', update });
+      showNotification({ message: { key: 'ErrorUnspecified' } });
+    }
+  });
+
+  function renderUpdateItem() {
+    switch (updateState.status) {
+      case 'available':
+        return (
+          <ListItem icon="download" narrow onClick={handleInstallUpdate}>
+            {lang('NoirgramUpdateInstall', { version: updateState.update.version })}
+          </ListItem>
+        );
+      case 'installing':
+        return (
+          <ListItem icon="download" narrow disabled>
+            {lang('NoirgramUpdateInstalling', { version: updateState.update.version })}
+          </ListItem>
+        );
+      default:
+        return (
+          <ListItem
+            icon="reload"
+            narrow
+            disabled={updateState.status === 'checking'}
+            onClick={handleCheckUpdate}
+          >
+            <span className="title">{lang('NoirgramUpdateCheck')}</span>
+            {updateState.status === 'latest' && (
+              <span className="subtitle">{lang('NoirgramUpdateLatest')}</span>
+            )}
+            {updateState.status === 'unavailable' && (
+              <span className="subtitle">{lang('NoirgramUpdateUnavailable')}</span>
+            )}
+          </ListItem>
+        );
+    }
+  }
+
   return (
     <>
       <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionSystem')}</IslandTitle>
@@ -182,6 +249,21 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
           />
         </div>
       </Island>
+      {(notificationsSetting === 'disabled' || notificationsSetting === 'disabledByPolicy') && (
+        <IslandDescription dir={lang.isRtl ? 'rtl' : undefined}>
+          {lang(notificationsSetting === 'disabledByPolicy'
+            ? 'NoirgramNotificationsBlockedByPolicy'
+            : 'NoirgramNotificationsBlocked')}
+        </IslandDescription>
+      )}
+
+      <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionUpdates')}</IslandTitle>
+      <Island>
+        {renderUpdateItem()}
+      </Island>
+      <IslandDescription dir={lang.isRtl ? 'rtl' : undefined}>
+        {lang('NoirgramUpdateVersion', { version: window.tauri.version })}
+      </IslandDescription>
 
       <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionProxy')}</IslandTitle>
       <Island>

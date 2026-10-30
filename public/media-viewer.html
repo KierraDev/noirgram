@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Noirgram</title>
+  <!--
+    Detached media viewer of the Noirgram desktop app (`open_media_window` in `tauri/src/lib.rs`).
+    Shows a photo or plays a video the app window already has: a blob URL or a stream that the
+    Service Worker serves through the app window. No Telegram connection of its own.
+  -->
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --ink-1: rgba(255, 255, 255, 0.92);
+      --ink-2: rgba(255, 255, 255, 0.64);
+      --accent: #87a6df;
+      --glass: rgba(26, 28, 36, 0.62);
+      --rim: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35), 0 24px 64px rgba(0, 0, 0, 0.3);
+      --ease-spring: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+        0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink-1);
+      font: 13px/1.45 "Inter Variable", "Inter", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      user-select: none;
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .stage.is-panning { cursor: grabbing; }
+    .stage.is-video { cursor: default; }
+
+    .media {
+      max-width: 100%;
+      max-height: 100%;
+      transform-origin: 0 0;
+      will-change: transform;
+      opacity: 0;
+      transition: opacity 220ms ease-out;
+      -webkit-user-drag: none;
+    }
+
+    .media.is-ready { opacity: 1; }
+
+    video.media {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: none !important;
+    }
+
+    .toolbar {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px;
+      border-radius: 999px;
+      background: var(--glass);
+      backdrop-filter: blur(24px) saturate(180%);
+      box-shadow: var(--rim), 0 0 0 1px rgba(255, 255, 255, 0.06), var(--shadow);
+      transform: translate(-50%, 0);
+      transition: opacity 220ms ease-out, transform 360ms var(--ease-spring);
+    }
+
+    body.is-idle .toolbar {
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      pointer-events: none;
+    }
+
+    .button {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink-1);
+      cursor: pointer;
+      transition: background-color 120ms ease-out, transform 120ms ease-out;
+    }
+
+    .button:hover { background: rgba(255, 255, 255, 0.1); }
+    .button:active { transform: scale(0.94); }
+
+    .button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .zoom {
+      min-width: 52px;
+      color: var(--ink-2);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    .error {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      color: var(--ink-2);
+    }
+
+    body.has-error .error { display: grid; }
+    body.is-video .toolbar { display: none; }
+
+    @media (prefers-reduced-transparency: reduce) {
+      .toolbar {
+        background: #1a1c24;
+        backdrop-filter: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .toolbar, .media { transition-duration: 1ms; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage"></div>
+  <div class="error" id="error">Media is no longer available</div>
+  <div class="toolbar" id="toolbar" role="toolbar">
+    <button class="button" type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out (−)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>
+    </button>
+    <span class="zoom" id="zoom">100%</span>
+    <button class="button" type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in (+)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M11 8v6M20 20l-4-4"/></svg>
+    </button>
+    <button class="button" type="button" id="fit" aria-label="Fit to window" title="Fit to window (0)">
+      <svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg>
+    </button>
+  </div>
+  <script src="./media-viewer.js"></script>
+</body>
+</html>
