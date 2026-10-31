@@ -2941,7 +2941,7 @@ dependencies = [
 
 [[package]]
 name = "noirgram"
-version = "2.12.2"
+version = "1.0.0"
 dependencies = [
  "ab_glyph",
  "cocoa",

@@ -1,10 +1,10 @@
  [package]
 name = "noirgram"
-version = "2.12.2"
+version = "1.0.0"
 description = "Noirgram"
-authors = ["Alexander Zinchuk"]
+authors = ["KierraDev"]
 license = "GPLv3"
-repository = "https://github.com/Ajaxy/telegram-tt"
+repository = "https://github.com/KierraDev/noirgram"
 edition = "2024"
 rust-version = "1.97"
 
