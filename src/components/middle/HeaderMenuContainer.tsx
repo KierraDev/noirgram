@@ -36,6 +36,7 @@ import {
   selectChatFullInfo,
   selectChatHistoryTtl,
   selectCurrentMessageList,
+  selectIsChatProtected,
   selectIsChatRestricted,
   selectIsChatWithSelf,
   selectIsCurrentUserFrozen,
@@ -62,6 +63,7 @@ import DeleteChatModal from '../common/DeleteChatModal';
 import AutoDeleteOutlinedIcon from '../common/icons/AutoDeleteOutlinedIcon';
 import Icon from '../common/icons/Icon';
 import MuteChatModal from '../left/MuteChatModal.async';
+import { openExportChatModal } from '../main/ExportChatModal';
 import Menu from '../ui/Menu';
 import MenuItem from '../ui/MenuItem';
 import MenuSeparator from '../ui/MenuSeparator';
@@ -111,6 +113,7 @@ export type OwnProps = {
 
 type StateProps = {
   chat?: ApiChat;
+  isChatProtected?: boolean;
   botCommands?: ApiBotCommand[];
   botPrivacyPolicyUrl?: string;
   isPrivate?: boolean;
@@ -172,6 +175,7 @@ const HeaderMenuContainer = ({
   canEnterVoiceChat,
   canCreateVoiceChat,
   chat,
+  isChatProtected,
   isPrivate,
   isMuted,
   canDeleteChat,
@@ -289,6 +293,11 @@ const HeaderMenuContainer = ({
   const closeMenu = useLastCallback(() => {
     setIsMenuOpen(false);
     onClose();
+  });
+
+  const handleExportHistory = useLastCallback(() => {
+    openExportChatModal(chatId);
+    closeMenu();
   });
 
   const handleViewGroupInfo = useLastCallback(() => {
@@ -831,6 +840,14 @@ const HeaderMenuContainer = ({
               {lang('ReportSelectMessages')}
             </MenuItem>
           )}
+          {!withForumActions && threadId === MAIN_THREAD_ID && !isChatProtected && (
+            <MenuItem
+              icon="download"
+              onClick={handleExportHistory}
+            >
+              {lang('NoirgramExportHistory')}
+            </MenuItem>
+          )}
           {canViewBoosts && (
             <MenuItem
               icon="boost-outline"
@@ -997,6 +1014,7 @@ export default memo(withGlobal<OwnProps>(
 
     return {
       chat,
+      isChatProtected: selectIsChatProtected(global, chatId),
       isMuted: getIsChatMuted(chat, selectNotifyDefaults(global), selectNotifyException(global, chat.id)),
       isPrivate,
       isTopic: chat?.isForum && !isMainThread,

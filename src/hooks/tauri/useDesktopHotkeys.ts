@@ -2,6 +2,7 @@ import { useEffect } from '../../lib/teact/teact';
 
 import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import { getHotkeyMatcher } from '../../util/parseHotkey';
+import { stepInterfaceScale } from '../../util/tauri/interfaceScale';
 
 type WindowAction = (e: KeyboardEvent) => Promise<void>;
 
@@ -24,6 +25,12 @@ const HOTKEYS: Record<string, WindowAction> = {
     const tauriWindow = await window.tauri.getCurrentWindow();
     await tauriWindow.setFullscreen(!await tauriWindow.isFullscreen());
   },
+  // By physical keys, so they work in any keyboard layout. Ctrl+0 stays Saved Messages, as in Telegram Desktop.
+  'Ctrl+Equal': () => stepInterfaceScale(1),
+  'Ctrl+Shift+Equal': () => stepInterfaceScale(1),
+  'Ctrl+NumpadAdd': () => stepInterfaceScale(1),
+  'Ctrl+Minus': () => stepInterfaceScale(-1),
+  'Ctrl+NumpadSubtract': () => stepInterfaceScale(-1),
 };
 
 const MATCHERS = Object.entries(HOTKEYS).map(([hotkey, action]) => [getHotkeyMatcher(hotkey), action] as const);

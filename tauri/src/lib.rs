@@ -5,7 +5,8 @@ use std::sync::{LazyLock, Mutex};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tauri::{Emitter, LogicalPosition, Manager, webview::DownloadEvent};
+use tauri::webview::{DownloadEvent, PermissionKind, PermissionResponse};
+use tauri::{Emitter, LogicalPosition, Manager};
 use tauri_plugin_dialog::DialogExt;
 use url::Url;
 use uuid::Uuid;
@@ -345,6 +346,7 @@ pub fn run() {
     desktop::set_close_to_tray,
     desktop::set_launch_at_startup,
     desktop::set_proxy,
+    desktop::set_interface_scale,
     notifications::is_native_notifications_supported,
     notifications::get_native_notifications_setting,
     notifications::show_native_notification,
@@ -358,8 +360,14 @@ pub fn run() {
   ]);
 
   app
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while building tauri application")
+    .run(|app, event| {
+      // Toasts of a quit app would have dead "Reply" and "Mark as read" buttons
+      if let tauri::RunEvent::Exit = event {
+        notifications::clear_all(app);
+      }
+    });
 }
 
 #[tauri::command]
@@ -505,6 +513,16 @@ fn open_window(
   .min_inner_size(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
   .visible(is_visible)
   .disable_drag_drop_handler() // Required for Drag & Drop on Windows
+  // The app window only ever shows the app origin (see `on_navigation`), so it gets what a native
+  // client has without asking: microphone and camera for calls, notifications, clipboard images
+  .on_permission_request(|_, kind| match kind {
+    PermissionKind::Microphone
+    | PermissionKind::Camera
+    | PermissionKind::Notifications
+    | PermissionKind::ClipboardRead
+    | PermissionKind::Autoplay => PermissionResponse::Allow,
+    _ => PermissionResponse::Default,
+  })
   .initialization_script(&format!(
     "window.tauri = {{ version: '{}' }};",
     env!("CARGO_PKG_VERSION")
@@ -574,6 +592,7 @@ fn open_window(
   let new_window_builder = new_window_builder.title("");
 
   let window = new_window_builder.build().map_err(|err| err.to_string())?;
+  window.set_zoom(desktop::get_interface_scale()).unwrap_or_default();
 
   #[cfg(target_os = "macos")]
   if let Some(base_window) = app.get_window(&window_label) {

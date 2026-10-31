@@ -16,7 +16,7 @@ tauri-build = { version = "2.7.1", features = [] }
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-tauri = { version = "2.12.2", features = [ "devtools", "unstable", "config-json5", "tray-icon", "image-png"] }
+tauri = { version = "2.12.2", features = [ "unstable", "config-json5", "tray-icon", "image-png"] }
 tauri-plugin-window-state = "2.5.0"
 tauri-plugin-shell = "2.4.1"
 tauri-plugin-log = "2.10.0"

@@ -1,6 +1,8 @@
 import type { ChangeEvent } from 'react';
 import type { Update } from '@tauri-apps/plugin-updater';
-import { memo, useEffect, useMemo, useState } from '../../../lib/teact/teact';
+import {
+  memo, useEffect, useMemo, useRef, useState,
+} from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
 import type { RegularLangKey } from '../../../types/language';
@@ -8,6 +10,8 @@ import type {
   TauriDesktopSettings, TauriDownloadSettings, TauriNotificationsSetting, TauriProxyKind, TauriProxySettings,
 } from '../../../types/tauri';
 import type { IRadioOption } from '../../ui/RadioGroup';
+
+import { getNearestScaleIndex, INTERFACE_SCALES } from '../../../util/tauri/interfaceScale';
 
 import useLang from '../../../hooks/useLang';
 import useLastCallback from '../../../hooks/useLastCallback';
@@ -18,6 +22,7 @@ import Checkbox from '../../ui/Checkbox';
 import InputText from '../../ui/InputText';
 import ListItem from '../../ui/ListItem';
 import RadioGroup from '../../ui/RadioGroup';
+import RangeSlider from '../../ui/RangeSlider';
 
 type OwnProps = {
   isActive?: boolean;
@@ -41,6 +46,8 @@ const DEFAULT_PROXY_DRAFT: ProxyDraft = {
   port: '1080',
 };
 const MAX_PORT = 65535;
+const SCALE_APPLY_DELAY = 400;
+const SCALE_LABELS = INTERFACE_SCALES.map((scale) => `${Math.round(scale * 100)}%`);
 
 // Shown as a cheat sheet; the handlers live in `useDesktopHotkeys`, `LeftColumn`, `ChatList` and `ChatFolders`
 const SHORTCUTS: { keys: string; labelKey: RegularLangKey }[] = [
@@ -58,6 +65,7 @@ const SHORTCUTS: { keys: string; labelKey: RegularLangKey }[] = [
   { keys: 'Ctrl+W', labelKey: 'NoirgramShortcutClose' },
   { keys: 'Ctrl+M', labelKey: 'NoirgramShortcutMinimize' },
   { keys: 'F11', labelKey: 'NoirgramShortcutFullscreen' },
+  { keys: 'Ctrl+= · Ctrl+−', labelKey: 'NoirgramShortcutScale' },
   { keys: 'Ctrl+Q', labelKey: 'NoirgramShortcutQuit' },
 ];
 
@@ -73,6 +81,8 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
   const [proxyError, setProxyError] = useState<string | undefined>();
   const [updateState, setUpdateState] = useState<UpdateState>({ status: 'idle' });
   const [notificationsSetting, setNotificationsSetting] = useState<TauriNotificationsSetting | undefined>();
+  const [scaleIndex, setScaleIndex] = useState<number | undefined>();
+  const scaleTimeoutRef = useRef<number>();
 
   useEffect(() => {
     if (!isActive) return;
@@ -81,6 +91,7 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
     window.tauri.getNativeNotificationsSetting().then(setNotificationsSetting).catch(() => undefined);
     window.tauri.getDesktopSettings().then((settings) => {
       setDesktopSettings(settings);
+      setScaleIndex(getNearestScaleIndex(settings.interfaceScale));
       setProxyDraft(buildProxyDraft(settings.proxy));
     }).catch(() => undefined);
   }, [isActive]);
@@ -117,6 +128,15 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
   const handleLaunchAtStartupToggle = useLastCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const newSettings = await window.tauri.setLaunchAtStartup(e.target.checked).catch(() => undefined);
     if (newSettings) setDesktopSettings(newSettings);
+  });
+
+  // Applied once the slider rests: every step relayouts the whole window under the cursor
+  const handleScaleChange = useLastCallback((index: number) => {
+    setScaleIndex(index);
+    if (scaleTimeoutRef.current) clearTimeout(scaleTimeoutRef.current);
+    scaleTimeoutRef.current = window.setTimeout(() => {
+      window.tauri.setInterfaceScale(INTERFACE_SCALES[index]).then(setDesktopSettings).catch(() => undefined);
+    }, SCALE_APPLY_DELAY);
   });
 
   const handleCloseToTrayToggle = useLastCallback(async (e: ChangeEvent<HTMLInputElement>) => {
@@ -230,6 +250,16 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
     <>
       <IslandTitle dir={lang.isRtl ? 'rtl' : undefined}>{lang('NoirgramSectionSystem')}</IslandTitle>
       <Island>
+        {scaleIndex !== undefined && (
+          <div className="settings-item">
+            <RangeSlider
+              label={lang('NoirgramInterfaceScale')}
+              options={SCALE_LABELS}
+              value={scaleIndex}
+              onChange={handleScaleChange}
+            />
+          </div>
+        )}
         <div className="ListItem with-checkbox">
           <Checkbox
             label={lang('NoirgramLaunchAtStartup')}

@@ -24,6 +24,7 @@
     "allow-set-close-to-tray",
     "allow-set-launch-at-startup",
     "allow-set-proxy",
+    "allow-set-interface-scale",
     "allow-is-native-notifications-supported",
     "allow-get-native-notifications-setting",
     "allow-show-native-notification",

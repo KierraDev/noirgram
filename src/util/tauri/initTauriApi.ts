@@ -102,6 +102,11 @@ export default function initTauriApi() {
     return normalizeDesktopSettings(await core.invoke<TauriDesktopSettings>('set_proxy', { proxy }));
   }
 
+  async function setInterfaceScale(scale: number) {
+    const core = await corePromise;
+    return normalizeDesktopSettings(await core.invoke<TauriDesktopSettings>('set_interface_scale', { scale }));
+  }
+
   async function isNativeNotificationsSupported() {
     const core = await corePromise;
     return core.invoke<boolean>('is_native_notifications_supported');
@@ -170,6 +175,7 @@ export default function initTauriApi() {
     setCloseToTray,
     setLaunchAtStartup,
     setProxy,
+    setInterfaceScale,
     isNativeNotificationsSupported,
     getNativeNotificationsSetting,
     showNativeNotification,

@@ -85,6 +85,7 @@ import DeleteFolderDialog from './DeleteFolderDialog.async';
 import Dialogs from './Dialogs';
 import DownloadManager from './DownloadManager';
 import DraftRecipientPicker from './DraftRecipientPicker.async';
+import ExportChatModal from './ExportChatModal';
 import FoldersSidebar from './FoldersSidebar';
 import ForwardRecipientPicker from './ForwardRecipientPicker.async';
 import GameModal from './GameModal';
@@ -667,6 +668,7 @@ const Main = ({
       />
       <GameModal openedGame={openedGame} gameTitle={gameTitle} />
       <DownloadManager />
+      <ExportChatModal />
       <ConfettiContainer />
       {IS_WAVE_TRANSFORM_SUPPORTED && <WaveContainer />}
       <SnapEffectContainer />

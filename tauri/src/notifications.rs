@@ -304,6 +304,16 @@ mod imp {
     }
   }
 
+  pub fn clear_all(app: &AppHandle) {
+    if let Ok(mut alive) = ALIVE_TOASTS.lock() {
+      alive.clear();
+    }
+
+    ToastNotificationManager::History()
+      .and_then(|history| history.ClearWithId(&get_app_id(app)))
+      .unwrap_or_default();
+  }
+
   pub fn close_chat(app: &AppHandle, chat_id: &str) -> Result<(), String> {
     if let Ok(mut alive) = ALIVE_TOASTS.lock() {
       alive.retain(|toast| toast.chat_id != chat_id);
@@ -368,6 +378,11 @@ mod imp {
 pub fn init(#[allow(unused_variables)] app: &AppHandle) {
   #[cfg(windows)]
   imp::init(app);
+}
+
+pub fn clear_all(#[allow(unused_variables)] app: &AppHandle) {
+  #[cfg(windows)]
+  imp::clear_all(app);
 }
 
 #[tauri::command]

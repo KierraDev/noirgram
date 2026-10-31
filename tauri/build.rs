@@ -18,6 +18,7 @@ fn main() {
       "set_close_to_tray",
       "set_launch_at_startup",
       "set_proxy",
+      "set_interface_scale",
       "is_native_notifications_supported",
       "get_native_notifications_setting",
       "show_native_notification",

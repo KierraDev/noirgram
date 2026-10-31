@@ -4541,6 +4541,8 @@
 "NoirgramDownloadAsk" = "Ask where to save each file";
 "NoirgramDownloadAskDesc" = "Show the “Save as” dialog before every download";
 "NoirgramSectionSystem" = "System";
+"NoirgramInterfaceScale" = "Interface scale";
+"NoirgramShortcutScale" = "Interface scale";
 "NoirgramLaunchAtStartup" = "Launch at system startup";
 "NoirgramLaunchAtStartupDesc" = "Starts hidden in the tray";
 "NoirgramCloseToTray" = "Close to tray";
@@ -4578,6 +4580,16 @@
 "NoirgramNotificationsBlocked" = "Windows notifications are turned off for Noirgram. Turn them on in Windows Settings › System › Notifications.";
 "NoirgramNotificationsBlockedByPolicy" = "Windows notifications are turned off for all apps by a system policy (“Turn off toast notifications” in Group Policy). Noirgram cannot show messages until it is turned off.";
 "NoirgramMediaOpenInWindow" = "Open in a separate window";
+"NoirgramExportHistory" = "Export chat history";
+"NoirgramExportTitle" = "Export chat history";
+"NoirgramExportLoading" = "Loaded {loaded} of {total} messages";
+"NoirgramExportSaving" = "Saving the file…";
+"NoirgramExportDone" = "Exported {count} messages";
+"NoirgramExportError" = "Could not load the history. Check the connection and try again.";
+"NoirgramExportHint" = "One HTML page with text, authors, dates and replies. Media files stay in Telegram.";
+"NoirgramExportSummary" = "{count} messages · exported {date}";
+"NoirgramExportReply" = "In reply to";
+"NoirgramExportService" = "Service message";
 "NoirgramSectionAccent" = "Accent color";
 "NoirgramAccentNoir" = "Noir blue";
 "NoirgramAccentViolet" = "Violet";

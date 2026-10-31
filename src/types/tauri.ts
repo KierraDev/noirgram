@@ -22,6 +22,7 @@ export type TauriDesktopSettings = {
   proxy?: TauriProxySettings;
   // Proxy URL the running app was started with; proxy changes apply after a restart
   activeProxy?: string;
+  interfaceScale: number;
 };
 
 export type TauriNativeNotification = {
@@ -75,6 +76,7 @@ type TauriApi = {
   setCloseToTray: (shouldCloseToTray: boolean) => Promise<TauriDesktopSettings>;
   setLaunchAtStartup: (shouldLaunchAtStartup: boolean) => Promise<TauriDesktopSettings>;
   setProxy: (proxy?: TauriProxySettings) => Promise<TauriDesktopSettings>;
+  setInterfaceScale: (scale: number) => Promise<TauriDesktopSettings>;
   isNativeNotificationsSupported: () => Promise<boolean>;
   getNativeNotificationsSetting: () => Promise<TauriNotificationsSetting>;
   showNativeNotification: (notification: TauriNativeNotification, icon?: Uint8Array) => Promise<void>;

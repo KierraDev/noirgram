@@ -1,4 +1,4 @@
-// Desktop-only settings kept by the shell: close to tray, launch at startup, proxy.
+// Desktop-only settings kept by the shell: close to tray, launch at startup, proxy, interface scale.
 // They live outside the web app because they apply before any webview exists.
 
 use std::path::PathBuf;
@@ -9,6 +9,10 @@ use tauri::Manager;
 use tauri_plugin_autostart::ManagerExt;
 
 const SETTINGS_FILE: &str = "desktop-settings.json";
+
+// Interface scale on top of the Windows display scale, like "Interface scale" in Telegram Desktop
+pub const MIN_INTERFACE_SCALE: f64 = 0.8;
+pub const MAX_INTERFACE_SCALE: f64 = 2.0;
 
 // Passed by the autostart entry, so the app starts hidden in the tray like Telegram Desktop
 pub const MINIMIZED_ARG: &str = "--minimized";
@@ -42,6 +46,7 @@ pub struct ProxySettings {
 pub struct DesktopSettings {
   pub should_close_to_tray: bool,
   pub proxy: Option<ProxySettings>,
+  pub interface_scale: f64,
 }
 
 impl Default for DesktopSettings {
@@ -49,6 +54,7 @@ impl Default for DesktopSettings {
     Self {
       should_close_to_tray: true,
       proxy: None,
+      interface_scale: 1.0,
     }
   }
 }
@@ -61,6 +67,7 @@ pub struct DesktopSettingsInfo {
   proxy: Option<ProxySettings>,
   // The proxy the running WebView2 environment was started with; it changes only after a restart
   active_proxy: Option<String>,
+  interface_scale: f64,
 }
 
 static SETTINGS: LazyLock<Mutex<DesktopSettings>> = LazyLock::new(|| Mutex::new(DesktopSettings::default()));
@@ -83,6 +90,16 @@ pub fn init(app: &tauri::AppHandle) {
 
 pub fn read() -> DesktopSettings {
   SETTINGS.lock().map(|settings| settings.clone()).unwrap_or_default()
+}
+
+// A broken or hand-edited value falls back to 100%
+pub fn get_interface_scale() -> f64 {
+  let scale = read().interface_scale;
+  if scale.is_finite() && (MIN_INTERFACE_SCALE..=MAX_INTERFACE_SCALE).contains(&scale) {
+    scale
+  } else {
+    1.0
+  }
 }
 
 pub fn should_start_minimized() -> bool {
@@ -151,6 +168,7 @@ fn get_info(app: &tauri::AppHandle) -> DesktopSettingsInfo {
     should_launch_at_startup: app.autolaunch().is_enabled().unwrap_or(false),
     proxy: settings.proxy,
     active_proxy: get_active_proxy(),
+    interface_scale: get_interface_scale(),
   }
 }
 
@@ -188,5 +206,24 @@ pub fn set_proxy(app: tauri::AppHandle, proxy: Option<ProxySettings>) -> Result<
   }
 
   update(&app, |settings| settings.proxy = proxy)?;
+  Ok(get_info(&app))
+}
+
+// Applies to every app window at once; mini apps and the media viewer keep their own scale
+#[tauri::command]
+pub fn set_interface_scale(app: tauri::AppHandle, scale: f64) -> Result<DesktopSettingsInfo, String> {
+  if !scale.is_finite() || !(MIN_INTERFACE_SCALE..=MAX_INTERFACE_SCALE).contains(&scale) {
+    return Err("Unsupported interface scale".into());
+  }
+  // Steps of 5% keep the layout on whole pixels more often
+  let scale = (scale * 20.0).round() / 20.0;
+
+  update(&app, |settings| settings.interface_scale = scale)?;
+  for (label, window) in app.webview_windows() {
+    if !crate::is_auxiliary_label(&label) {
+      window.set_zoom(scale).unwrap_or_default();
+    }
+  }
+
   Ok(get_info(&app))
 }

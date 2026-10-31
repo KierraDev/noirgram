@@ -3405,6 +3405,8 @@ export interface LangPair {
   'NoirgramDownloadAsk': undefined;
   'NoirgramDownloadAskDesc': undefined;
   'NoirgramSectionSystem': undefined;
+  'NoirgramInterfaceScale': undefined;
+  'NoirgramShortcutScale': undefined;
   'NoirgramLaunchAtStartup': undefined;
   'NoirgramLaunchAtStartupDesc': undefined;
   'NoirgramCloseToTray': undefined;
@@ -3442,6 +3444,13 @@ export interface LangPair {
   'NoirgramNotificationsBlocked': undefined;
   'NoirgramNotificationsBlockedByPolicy': undefined;
   'NoirgramMediaOpenInWindow': undefined;
+  'NoirgramExportHistory': undefined;
+  'NoirgramExportTitle': undefined;
+  'NoirgramExportSaving': undefined;
+  'NoirgramExportError': undefined;
+  'NoirgramExportHint': undefined;
+  'NoirgramExportReply': undefined;
+  'NoirgramExportService': undefined;
   'NoirgramSectionAccent': undefined;
   'NoirgramAccentNoir': undefined;
   'NoirgramAccentViolet': undefined;
@@ -5716,6 +5725,17 @@ export interface LangPairWithVariables<V = LangVariable> {
   'NoirgramDownloadSaved': {
     'file': V;
   };
+  'NoirgramExportLoading': {
+    'loaded': V;
+    'total': V;
+  };
+  'NoirgramExportDone': {
+    'count': V;
+  };
+  'NoirgramExportSummary': {
+    'count': V;
+    'date': V;
+  };
   'NoirgramUpdateInstall': {
     'version': V;
   };
@@ -6916,7 +6936,8 @@ export interface LangKeyGroups {
       | 'BoostGiftStarsPerUser'
       | 'ConnectedAccountsLimitSubtitle'
       | 'GiveawayStarsPrepaidTitle'
-      | 'SimilarChannelsLimitSubtitle';
+      | 'SimilarChannelsLimitSubtitle'
+      | 'NoirgramExportDone';
     variables: 'count';
   };
   'duration,time': {
@@ -7961,6 +7982,16 @@ export interface LangKeyGroups {
     keys:
       | 'NoirgramDownloadSaved';
     variables: 'file';
+  };
+  'loaded,total': {
+    keys:
+      | 'NoirgramExportLoading';
+    variables: 'loaded' | 'total';
+  };
+  'count,date': {
+    keys:
+      | 'NoirgramExportSummary';
+    variables: 'count' | 'date';
   };
   'version': {
     keys:
