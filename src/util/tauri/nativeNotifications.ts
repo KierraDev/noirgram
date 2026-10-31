@@ -10,14 +10,9 @@ import {
 } from '../../global/selectors';
 import { isUserId } from '../entities/ids';
 
-// Windows toasts with an inline reply box and "Mark as read", handled by the desktop shell
-// (`tauri/src/notifications.rs`). Clicks come back as `notification-action` events.
-
 let isSupportedPromise: Promise<boolean> | undefined;
 let isListening = false;
-// Avatars are cached on disk by the shell, their bytes are only sent once per run
 const sentIconKeys = new Set<string>();
-// Newest message shown per chat: its toasts go away once the chat is read up to it
 const notifiedMaxIdByChatId = new Map<string, number>();
 
 export function checkIfNativeNotificationsSupported() {
@@ -99,7 +94,6 @@ function handleAction({
 
     case 'reply':
       if (text && sendReply(chatId, text, messageId)) {
-        // Answering means having read the chat, like in Telegram Desktop
         markChatMessagesRead({ id: chatId });
         notifiedMaxIdByChatId.delete(chatId);
         void window.tauri.closeNativeNotifications(chatId).catch(() => undefined);
@@ -111,8 +105,6 @@ function handleAction({
   }
 }
 
-// Sent straight to the chat, bypassing the composer: its draft and reply state stay untouched.
-// In groups the answer quotes the message, so it is clear what it answers (and lands in its topic).
 function sendReply(chatId: string, text: string, messageId?: number) {
   const global = getGlobal();
   const chat = selectChat(global, chatId);

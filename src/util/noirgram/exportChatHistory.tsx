@@ -15,11 +15,7 @@ import { pause } from '../schedulers';
 
 import MessageSummary from '../../components/common/MessageSummary';
 
-// "Export chat history" of Telegram Desktop, as one self-contained HTML page: text, authors, dates,
-// replies and what media each message had. Media files themselves stay in Telegram.
-
 const BATCH_SIZE = 100;
-// Keeps a long export well under the flood limits
 const BATCH_PAUSE_MS = 150;
 
 export type ExportProgress = {
@@ -47,7 +43,6 @@ export async function loadChatHistory(
 
     total ??= result.count;
     peers.push(...result.users, ...result.chats);
-    // Local and scheduled messages never come from the history request, but keep the ids sane anyway
     const batch = result.messages.filter((message) => message.id > 0 && message.id !== offsetId);
     messages.push(...batch);
     onProgress({ loaded: messages.length, total });
@@ -69,7 +64,6 @@ function escapeHtml(text: string) {
     .replace(/"/g, '&quot;');
 }
 
-// Plain text with clickable links; formatting is left out, like in a printed transcript
 function renderText(text: string) {
   return escapeHtml(text).replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, (url) => (
     `<a href="${url}" rel="noopener noreferrer">${url}</a>`
@@ -214,7 +208,6 @@ ${parts.join('\n')}
 }
 
 export function getExportFilename(lang: LangFn, chat: ApiChat) {
-  // Windows file names: no reserved or control characters
   const title = Array.from(getPeerTitle(lang, chat) || 'chat')
     .map((char) => (char < ' ' || '<>:"/\\|?*'.includes(char) ? '_' : char))
     .join('')

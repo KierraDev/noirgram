@@ -1,7 +1,3 @@
-// Tactile feedback: presses sink instantly and spring back on release.
-// The standalone `scale` property is used so upstream `transform` animations stay intact,
-// and only compositor-friendly properties are animated.
-
 body .Button {
   text-transform: none;
   transition:

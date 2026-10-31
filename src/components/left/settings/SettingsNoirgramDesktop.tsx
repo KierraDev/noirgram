@@ -49,7 +49,6 @@ const MAX_PORT = 65535;
 const SCALE_APPLY_DELAY = 400;
 const SCALE_LABELS = INTERFACE_SCALES.map((scale) => `${Math.round(scale * 100)}%`);
 
-// Shown as a cheat sheet; the handlers live in `useDesktopHotkeys`, `LeftColumn`, `ChatList` and `ChatFolders`
 const SHORTCUTS: { keys: string; labelKey: RegularLangKey }[] = [
   { keys: 'Ctrl+K', labelKey: 'NoirgramShortcutQuickSearch' },
   { keys: 'Ctrl+Shift+F', labelKey: 'NoirgramShortcutSearch' },
@@ -69,7 +68,6 @@ const SHORTCUTS: { keys: string; labelKey: RegularLangKey }[] = [
   { keys: 'Ctrl+Q', labelKey: 'NoirgramShortcutQuit' },
 ];
 
-// Desktop settings live in the Tauri shell: they apply to windows and to the WebView2 environment
 const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
   const { openDownloadsFolder, showNotification } = getActions();
 
@@ -130,7 +128,6 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
     if (newSettings) setDesktopSettings(newSettings);
   });
 
-  // Applied once the slider rests: every step relayouts the whole window under the cursor
   const handleScaleChange = useLastCallback((index: number) => {
     setScaleIndex(index);
     if (scaleTimeoutRef.current) clearTimeout(scaleTimeoutRef.current);
@@ -187,7 +184,6 @@ const SettingsNoirgramDesktop = ({ isActive }: OwnProps) => {
     });
   });
 
-  // Builds without the update channel (`npm run tauri:release`) have no updater, the check then fails
   const handleCheckUpdate = useLastCallback(async () => {
     setUpdateState({ status: 'checking' });
     try {
@@ -419,7 +415,6 @@ function buildProxySettings(draft: ProxyDraft): TauriProxySettings | undefined {
   };
 }
 
-// Same format as the shell builds for `--proxy-server`
 function buildProxyUrl(proxy?: TauriProxySettings) {
   if (!proxy?.isEnabled) return undefined;
   return `${proxy.kind}://${proxy.host.trim()}:${proxy.port}`;

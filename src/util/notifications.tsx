@@ -511,7 +511,6 @@ export async function notifyAboutMessage({
   } else if (IS_TAURI && await checkIfNativeNotificationsSupported()) {
     const lang = getTranslationFn();
     const avatarHash = getChatAvatarHash(chat);
-    // Reactions are about the user's own message, there is nothing to answer
     const canAnswer = !isReaction && !getGlobal().passcode.isScreenLocked;
 
     void showNativeNotification({

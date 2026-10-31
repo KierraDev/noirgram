@@ -13,10 +13,7 @@ import { selectMessageDownloadableMedia } from '../../global/selectors/media';
 import { IS_TAURI } from '../../util/browser/globalEnvironment';
 import * as mediaLoader from '../../util/mediaLoader';
 
-// Media and files are dragged out of a message into Explorer or another app, like in Telegram Desktop.
-// The drag starts once the pointer moves a bit with the button held, so clicks stay clicks.
 const DRAG_THRESHOLD = 6;
-// Files that are not loaded yet are fetched while the button is held, but only reasonably small ones
 const MAX_LOAD_SIZE = 64 * 1024 * 1024;
 const DRAGGABLE_SELECTOR = '.media-inner, .File, .Audio';
 const NOT_DRAGGABLE_SELECTOR = '.AnimatedEmoji, .Sticker, .WebPage, .RoundVideo, button, a';
@@ -29,7 +26,6 @@ type DragCandidate = {
 };
 
 function getMessageId(target: HTMLElement) {
-  // Album items carry their own message, the album bubble belongs to the first one
   const albumItem = target.closest<HTMLElement>('[id^="album-media-message-"]');
   const albumMessageId = albumItem?.id.match(/^album-media-message-(\d+)/)?.[1];
   if (albumMessageId) return Number(albumMessageId);
@@ -101,7 +97,6 @@ export default function useFileDragOut() {
 
       const dragged = candidate;
       candidate = undefined;
-      // No text selection sweeping across the chat while the native drag is being prepared
       window.getSelection()?.removeAllRanges();
 
       void loadFile(dragged)
@@ -109,7 +104,6 @@ export default function useFileDragOut() {
         .catch(() => undefined);
     }
 
-    // The browser's own drag of a picture would only carry a temporary blob link
     function handleDragStart(e: DragEvent) {
       const target = e.target as HTMLElement | null;
       if (target?.closest?.('.MessageList') && target.closest(DRAGGABLE_SELECTOR)) {

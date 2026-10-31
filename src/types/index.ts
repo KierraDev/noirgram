@@ -667,7 +667,6 @@ export type ActiveDownloads = Record<string, {
   size: number;
   originChatId?: string;
   originMessageId?: number;
-  // Desktop app: show the "Save as" dialog for this file regardless of the download settings
   shouldAskPath?: boolean;
 }>;
 

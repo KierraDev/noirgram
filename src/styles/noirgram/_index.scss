@@ -1,6 +1,3 @@
-// Noirgram desktop layer. Loaded after the upstream styles and kept out of `@layer`,
-// so it overrides the layered upstream rules without `!important`.
-
 @use "tokens";
 @use "window";
 @use "scrollbars";

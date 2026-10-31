@@ -108,7 +108,6 @@ const ChatList = ({
   const { chatListDensity } = useSelector(selectNoirgramSettings);
   const chatHeight = getChatHeightPx(chatListDensity);
   const chatsHeight = (orderedIds?.length || 0) * chatHeight;
-  // The archive row keeps its own height in every density
   const archiveHeight = shouldDisplayArchive
     ? archiveSettings?.isMinimized ? ARCHIVE_MINIMIZED_HEIGHT : CHAT_HEIGHT_PX : 0;
 
@@ -121,7 +120,6 @@ const ChatList = ({
     : CHAT_LIST_SLICE;
   const [viewportIds, getMore] = useInfiniteScroll(undefined, orderedIds, undefined, chatListSlice);
 
-  // Support <Alt>+<Up/Down> to navigate between chats, plus the Telegram Desktop shortcuts in the desktop app
   useHotkeys(useMemo(() => {
     if (!isActive || !orderedIds?.length) return undefined;
 

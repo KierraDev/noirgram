@@ -1,7 +1,5 @@
 import type { LangKey } from '../../types/language';
 
-// Telegram language packs come from Telegram servers and know nothing about Noirgram strings, so their
-// translations ship with the app. English lives in `fallback.strings`; keys missing here fall back to it.
 const NOIRGRAM_STRINGS: Record<string, Partial<Record<LangKey, string>>> = {
   ru: {
     NoirgramSettings: 'Noirgram',

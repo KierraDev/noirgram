@@ -1,27 +1,19 @@
-// Swiftgram look on top of the upstream islands: the chat header and the composer float as glass
-// over the wallpaper, bubbles get iOS-like roundness. Only chrome turns to glass, never content.
-
 @use "glass";
 
 :root {
   --border-radius-messages: 1.125rem;
 }
 
-// Inter: the closest open relative of SF Pro, with Cyrillic. Apple systems keep their own SF,
-// Persian keeps Vazirmatn.
 html:not([lang="fa"]) body:not(.is-ios):not(.is-macos) {
   --font-family: "Inter Variable", "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-weight-semibold: 600;
 
-  // Inter is set a touch wider than Roboto; slight negative tracking keeps the density
   letter-spacing: -0.006em;
 }
 
-// The wallpaper and messages show through, slightly blurred, while scrolling under the islands
 body .MiddleHeader {
   @include glass.surface(72%);
 
-  // The tools sit on the same glass instead of an opaque pill of their own
   .header-tools {
     background-color: transparent;
   }
@@ -31,7 +23,6 @@ body .Composer.is-chat-composer {
   @include glass.surface(80%);
 }
 
-// Solid fallbacks: the glass needs the upstream opaque backgrounds back
 body.no-menu-blur {
   .MiddleHeader,
   .Composer.is-chat-composer {

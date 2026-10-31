@@ -1,5 +1,3 @@
-// Visual parts of the Noirgram settings (Settings › Noirgram), toggled by body classes in `App.tsx`
-
 body.ng-hide-stories {
   .Avatar .story-circle {
     display: none;
@@ -17,7 +15,6 @@ body.ng-avatars-squircle .Avatar:not(.forum) {
   --radius: 30%;
 }
 
-// Accent swatches in Settings › Noirgram › Accent color
 .noirgram-accents {
   display: flex;
   flex-wrap: wrap;
@@ -41,7 +38,6 @@ body.ng-avatars-squircle .Avatar:not(.forum) {
 
   transition: transform 220ms var(--ng-ease-spring);
 
-  // The selection ring sits outside with a gap of the island color, like iOS color pickers
   &::after {
     content: "";
 
@@ -76,7 +72,6 @@ body.ng-avatars-squircle .Avatar:not(.forum) {
   }
 }
 
-// Key caps in Settings › Noirgram › Keyboard shortcuts
 .noirgram-kbd {
   padding: 0.125rem 0.5rem;
   border: 1px solid var(--color-borders);

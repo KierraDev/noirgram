@@ -27,8 +27,6 @@ export function openExportChatModal(chatId: string) {
   setExportChatId(chatId);
 }
 
-// Progress of "Export chat history" (chat header menu). Loading runs while the modal is open and
-// stops when it is closed.
 const ExportChatModal = () => {
   const lang = useLang();
   const chatId = useDerivedState(getExportChatId);
@@ -58,7 +56,6 @@ const ExportChatModal = () => {
         const exportLang = getTranslationFn();
         const html = buildChatHistoryHtml(exportLang, currentChat, history);
         const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-        // Always asks where to save, like the export of Telegram Desktop
         download(url, getExportFilename(exportLang, currentChat), true);
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         if (!abortController.signal.aborted) setStatus('done');

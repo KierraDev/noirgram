@@ -6,9 +6,7 @@ import { stepInterfaceScale } from '../../util/tauri/interfaceScale';
 
 type WindowAction = (e: KeyboardEvent) => Promise<void>;
 
-// Window-level shortcuts of Telegram Desktop. They work from inputs too, like in a native window.
 const HOTKEYS: Record<string, WindowAction> = {
-  // Hides to tray or quits, as "Close to tray" says
   'Ctrl+W': async () => {
     const tauriWindow = await window.tauri.getCurrentWindow();
     await tauriWindow.close();
@@ -25,7 +23,6 @@ const HOTKEYS: Record<string, WindowAction> = {
     const tauriWindow = await window.tauri.getCurrentWindow();
     await tauriWindow.setFullscreen(!await tauriWindow.isFullscreen());
   },
-  // By physical keys, so they work in any keyboard layout. Ctrl+0 stays Saved Messages, as in Telegram Desktop.
   'Ctrl+Equal': () => stepInterfaceScale(1),
   'Ctrl+Shift+Equal': () => stepInterfaceScale(1),
   'Ctrl+NumpadAdd': () => stepInterfaceScale(1),

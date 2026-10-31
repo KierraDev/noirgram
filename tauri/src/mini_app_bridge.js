@@ -1,6 +1,3 @@
-// Injected into mini app windows. Implements the native `TelegramWebviewProxy` bridge used by
-// Telegram Desktop: UI events (bottom buttons, back button, viewport) are handled here, everything
-// else is forwarded to the app window that opened the mini app.
 (() => {
   if (window.__noirgramMiniApp || window.top !== window) return;
   window.__noirgramMiniApp = true;
@@ -165,7 +162,6 @@
     renderButton(elements.mainButton, state.main, true);
     renderButton(elements.secondaryButton, state.secondary, false);
 
-    // Secondary button sits on the left unless the app asks to put it on the right
     const isReversed = state.secondary && state.secondary.position === 'right';
     elements.bar.style.flexDirection = isReversed ? 'row-reverse' : 'row';
     elements.bar.style.backgroundColor = state.barColor || state.themeBarColor;
@@ -181,7 +177,6 @@
     }
   }
 
-  // Returns `true` when the event is fully handled inside the mini app window
   function handleLocally(eventType, data) {
     switch (eventType) {
       case 'web_app_setup_main_button':

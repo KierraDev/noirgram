@@ -1,6 +1,3 @@
-// Desktop-only settings kept by the shell: close to tray, launch at startup, proxy, interface scale.
-// They live outside the web app because they apply before any webview exists.
-
 use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex, OnceLock};
 
@@ -10,15 +7,11 @@ use tauri_plugin_autostart::ManagerExt;
 
 const SETTINGS_FILE: &str = "desktop-settings.json";
 
-// Interface scale on top of the Windows display scale, like "Interface scale" in Telegram Desktop
 pub const MIN_INTERFACE_SCALE: f64 = 0.8;
 pub const MAX_INTERFACE_SCALE: f64 = 2.0;
 
-// Passed by the autostart entry, so the app starts hidden in the tray like Telegram Desktop
 pub const MINIMIZED_ARG: &str = "--minimized";
 
-// Tauri's default `--disable-features` list is kept, GPU raster is forced on, and background
-// throttling is off so the MTProto connection and timers stay alive while the window is hidden to tray.
 const BASE_BROWSER_ARGS: &str = "--autoplay-policy=no-user-gesture-required \
   --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,CalculateNativeWinOcclusion \
   --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
@@ -65,15 +58,12 @@ pub struct DesktopSettingsInfo {
   should_close_to_tray: bool,
   should_launch_at_startup: bool,
   proxy: Option<ProxySettings>,
-  // The proxy the running WebView2 environment was started with; it changes only after a restart
   active_proxy: Option<String>,
   interface_scale: f64,
 }
 
 static SETTINGS: LazyLock<Mutex<DesktopSettings>> = LazyLock::new(|| Mutex::new(DesktopSettings::default()));
 
-// Every webview shares one WebView2 environment, so all windows must use the same arguments.
-// They are fixed at the first window, and proxy changes apply after a restart.
 static BROWSER_ARGS: OnceLock<String> = OnceLock::new();
 static ACTIVE_PROXY: OnceLock<Option<String>> = OnceLock::new();
 
@@ -92,7 +82,6 @@ pub fn read() -> DesktopSettings {
   SETTINGS.lock().map(|settings| settings.clone()).unwrap_or_default()
 }
 
-// A broken or hand-edited value falls back to 100%
 pub fn get_interface_scale() -> f64 {
   let scale = read().interface_scale;
   if scale.is_finite() && (MIN_INTERFACE_SCALE..=MAX_INTERFACE_SCALE).contains(&scale) {
@@ -122,7 +111,6 @@ fn get_active_proxy() -> Option<String> {
     .clone()
 }
 
-// Only plain hosts and ports reach the command line, never arbitrary text
 fn build_proxy_url(proxy: &ProxySettings) -> Option<String> {
   let host = proxy.host.trim();
   let is_valid_host = !host.is_empty()
@@ -209,13 +197,11 @@ pub fn set_proxy(app: tauri::AppHandle, proxy: Option<ProxySettings>) -> Result<
   Ok(get_info(&app))
 }
 
-// Applies to every app window at once; mini apps and the media viewer keep their own scale
 #[tauri::command]
 pub fn set_interface_scale(app: tauri::AppHandle, scale: f64) -> Result<DesktopSettingsInfo, String> {
   if !scale.is_finite() || !(MIN_INTERFACE_SCALE..=MAX_INTERFACE_SCALE).contains(&scale) {
     return Err("Unsupported interface scale".into());
   }
-  // Steps of 5% keep the layout on whole pixels more often
   let scale = (scale * 20.0).round() / 20.0;
 
   update(&app, |settings| settings.interface_scale = scale)?;

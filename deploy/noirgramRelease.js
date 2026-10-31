@@ -1,18 +1,4 @@
 /* eslint-disable no-console */
-// Noirgram release build with the update channel: `npm run tauri:release`.
-//
-// Builds the signed installer and writes `latest.json` next to it. Upload both to the place
-// `NOIRGRAM_UPDATE_URL` points at (for GitHub Releases: attach them to a release, then
-// `https://github.com/<user>/<repo>/releases/latest/download/latest.json` always serves the newest one).
-// Installed apps check that URL every few hours and offer "Update Noirgram" in the chat list.
-//
-// Environment:
-//   NOIRGRAM_UPDATE_URL     required, URL of `latest.json`
-//   NOIRGRAM_DOWNLOAD_URL   optional, folder URL of the installer; defaults to the folder of `latest.json`
-//   NOIRGRAM_RELEASE_NOTES  optional, shown in the update offer
-//
-// The updater signing key is created on the first run in `~/.tauri/noirgram-updater.key`. Keep it safe:
-// installed apps only accept updates signed with it.
 
 import { spawnSync } from 'node:child_process';
 import {
@@ -35,7 +21,6 @@ function run(command, args, env = {}) {
   const result = spawnSync(command, args, {
     cwd: ROOT,
     stdio: 'inherit',
-    // Through the shell everywhere, so quoted arguments mean the same on every platform
     shell: true,
     env: { ...process.env, ...env },
   });
@@ -54,7 +39,6 @@ const downloadUrl = (process.env.NOIRGRAM_DOWNLOAD_URL || new URL('.', updateUrl
 if (!existsSync(KEY_PATH)) {
   console.log(`Creating the updater signing key in ${KEY_PATH}`);
   mkdirSync(dirname(KEY_PATH), { recursive: true });
-  // An empty password: the key file itself is the secret. `""` survives the Windows shell as an empty argument.
   run('npx', ['tauri', 'signer', 'generate', '--ci', '-p', '""', '-w', `"${KEY_PATH}"`]);
 }
 
@@ -81,7 +65,6 @@ run('npx', ['tauri', 'build', '--config', `"${configPath}"`], {
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: '',
 });
 
-// `tauri.conf.json` has no version of its own, the app takes the crate version
 const version = readFileSync(join(ROOT, 'tauri', 'Cargo.toml'), 'utf8').match(/^version = "([^"]+)"/m)?.[1];
 if (!version) {
   fail('No version in tauri/Cargo.toml');

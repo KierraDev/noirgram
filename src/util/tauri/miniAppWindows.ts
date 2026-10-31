@@ -1,9 +1,5 @@
 import type { WebAppInboundEvent, WebAppOutboundEvent } from '../../types/webapp';
 
-// Mini apps open in their own native window (see `open_mini_app_window` in the Tauri shell).
-// Their `TelegramWebviewProxy.postEvent` calls arrive here as `mini-app-event` and are routed
-// to the web app tab that owns the window.
-
 type MiniAppEventPayload = {
   label: string;
   eventType: string;
@@ -52,7 +48,6 @@ function ensureListeners() {
   return listenersPromise;
 }
 
-// Window labels only allow `[a-zA-Z0-9-/:_]`, so the web app key is hashed into one
 export function getMiniAppWindowLabel(webAppKey: string) {
   let hash = 0;
   for (let i = 0; i < webAppKey.length; i++) {

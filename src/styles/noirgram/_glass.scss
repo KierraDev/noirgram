@@ -1,6 +1,3 @@
-// Glass for chrome surfaces: translucent tint, blur with saturation, a light rim and a soft float shadow.
-// Falls back to the opaque surface when the system asks for less transparency.
-
 @mixin surface($alpha: var(--ng-glass-alpha), $blur: var(--ng-glass-blur)) {
   background-color: color-mix(in srgb, var(--color-background) $alpha, transparent);
   backdrop-filter: blur($blur) saturate(var(--ng-glass-saturate));

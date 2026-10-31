@@ -108,7 +108,6 @@ fn tray_click_handler(tray: &TrayIcon, event: TrayIconEvent) {
 }
 
 fn handle_icon_click(app: &AppHandle, only_open: bool) {
-  // Mini app and media viewer windows come and go on their own
   let active_windows: Vec<_> = app
     .windows()
     .into_iter()

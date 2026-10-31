@@ -497,7 +497,6 @@ function LeftColumn({
       'Mod+0': handleHotkeySavedMessages,
       'Mod+9': handleArchivedChats,
     }),
-    // Telegram Desktop opens settings with Ctrl+, on every platform
     ...((IS_MAC_OS || IS_TAURI) && IS_APP && { 'Mod+,': handleHotkeySettings }),
   }), []));
 

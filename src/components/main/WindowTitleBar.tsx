@@ -55,7 +55,6 @@ const WindowTitleBar = () => {
   const handleDragAreaMouseDown = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !tauriWindow) return;
 
-    // `startDragging` swallows the native `dblclick`, so double clicks are detected on `mousedown`
     if (e.detail === DOUBLE_CLICK_DETAIL) {
       void tauriWindow.toggleMaximize();
       return;

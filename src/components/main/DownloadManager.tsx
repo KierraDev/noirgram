@@ -84,8 +84,6 @@ const DownloadManager = ({
           const url = new URL(result, window.document.baseURI);
           url.searchParams.set('filename', encodeURIComponent(filename));
 
-          // A popup would be a separate browser window outside of the desktop download handling.
-          // The Service Worker streams this URL to the download in the app window just as well.
           if (IS_TAURI) {
             download(url.toString(), filename, shouldAskPath);
             handleMediaDownloaded(mediaHash);

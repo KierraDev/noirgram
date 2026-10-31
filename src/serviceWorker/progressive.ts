@@ -165,7 +165,6 @@ export async function requestPart(
 ): Promise<PartInfo | undefined> {
   const isDownload = params.url.includes('/download/');
   let client = await (isDownload ? getClientForRequest(params.url) : self.clients.get(e.clientId));
-  // The detached media viewer window has no API of its own, an app window streams for it
   if (client && isMediaViewerClient(client)) {
     client = await getClientForRequest(params.url);
   }

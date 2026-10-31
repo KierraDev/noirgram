@@ -1,4 +1,3 @@
-// Detached media viewer of the Noirgram desktop app, see `media-viewer.html`
 (function () {
   var MIN_SCALE = 0.1;
   var MAX_SCALE = 8;
@@ -38,7 +37,6 @@
     document.body.classList.add('has-error');
   }
 
-  // Only media of the app itself, never an arbitrary page
   function isAllowedSource(url) {
     try {
       var parsed = new URL(url, window.location.href);
@@ -100,7 +98,6 @@
     apply();
   }
 
-  // Keeps the point under the cursor in place, like every image editor does
   function zoomAt(nextScale, pointX, pointY) {
     var clamped = Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
     x = pointX - ((pointX - x) * clamped) / scale;
@@ -170,7 +167,6 @@
     if (e.key === '0') fit();
   });
 
-  // The toolbar steps aside while the picture is being looked at
   var idleTimeout;
   function wake() {
     document.body.classList.remove('is-idle');

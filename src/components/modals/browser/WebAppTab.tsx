@@ -264,7 +264,6 @@ const WebAppTab = ({
   const isOpen = modal?.isModalOpen || false;
   const isSimple = Boolean(buttonText);
 
-  // On desktop, mini apps get their own native window like in Telegram Desktop
   const nativeWindowLabel = IS_TAURI && webAppKey && url && !webApp?.isSameOrigin
     ? getMiniAppWindowLabel(webAppKey)
     : undefined;
@@ -296,7 +295,6 @@ const WebAppTab = ({
     });
   });
 
-  // Only a new URL needs a new window; the title is read once on open
   useEffect(() => {
     if (!nativeWindowLabel || !url) return undefined;
 

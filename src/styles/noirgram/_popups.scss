@@ -1,6 +1,3 @@
-// Floating surfaces: context/dropdown menus and modal dialogs become thick glass islands
-// that spring in from their origin. `body` in selectors outranks upstream component rules.
-
 @use "glass";
 
 @mixin glass-surface($alpha: var(--ng-glass-alpha)) {

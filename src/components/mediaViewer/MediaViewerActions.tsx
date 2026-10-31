@@ -152,7 +152,6 @@ const MediaViewerActions = ({
     }
   });
 
-  // The detached window plays what the viewer already has, so it needs no loading of its own
   const handleOpenInWindow = useLastCallback(() => {
     if (!mediaData || !media) return;
 

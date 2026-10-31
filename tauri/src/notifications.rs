@@ -1,8 +1,3 @@
-// Native Windows toasts for new messages, like in Telegram Desktop: an inline reply box and
-// "Mark as read" right in the notification. Clicks come back through `ToastNotification::Activated`
-// while the app is running (it keeps running in the tray), the web app does the rest.
-// Other platforms keep the web notifications.
-
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, WebviewWindow};
 
@@ -13,10 +8,8 @@ pub struct NativeNotification {
   message_id: Option<i64>,
   title: String,
   body: String,
-  // Avatar hash: the icon is cached on disk, so its bytes are only sent once
   icon_key: Option<String>,
   is_silent: bool,
-  // Labels for the reply box and buttons, in the app language. No labels — no actions.
   reply_placeholder: Option<String>,
   reply_label: Option<String>,
   read_label: Option<String>,
@@ -59,16 +52,13 @@ mod imp {
   const APP_ICON_FILE: &str = "notification-app-icon.png";
   const APP_ICON: &[u8] = include_bytes!("../icons/128x128@2x.png");
   const REPLY_INPUT_ID: &str = "reply";
-  // Activation handlers live on the toast objects, keep the recent ones alive
   const MAX_ALIVE_TOASTS: usize = 64;
 
   struct AliveToast {
     chat_id: String,
-    // Only held to keep the activation handler alive
     _toast: ToastNotification,
   }
 
-  // SAFETY: toasts are agile WinRT objects, usable from any thread
   unsafe impl Send for AliveToast {}
 
   static ALIVE_TOASTS: LazyLock<Mutex<VecDeque<AliveToast>>> = LazyLock::new(|| Mutex::new(VecDeque::new()));
@@ -77,8 +67,6 @@ mod imp {
     HSTRING::from(app.config().identifier.as_str())
   }
 
-  // Unpackaged apps need their AppUserModelID registered to show toasts under their own name and icon
-  // (the installer shortcut carries it too, this also covers portable and dev runs)
   pub fn init(app: &AppHandle) {
     let identifier = app.config().identifier.clone();
     let display_name = app.package_info().name.clone();
@@ -114,7 +102,6 @@ mod imp {
         '>' => escaped.push_str("&gt;"),
         '"' => escaped.push_str("&quot;"),
         '\'' => escaped.push_str("&apos;"),
-        // Control characters are not allowed in XML at all
         '\t' | '\n' | '\r' => escaped.push(char),
         char if char < ' ' => {}
         char => escaped.push(char),
@@ -214,7 +201,6 @@ mod imp {
     let (action, text) = match arguments.as_str() {
       "reply" => match args.as_ref().and_then(get_reply_text) {
         Some(text) => ("reply", Some(text)),
-        // An empty reply opens the chat instead, so the message is not lost
         None => ("open", None),
       },
       "read" => ("read", None),
@@ -258,7 +244,6 @@ mod imp {
     document.LoadXml(&HSTRING::from(xml)).map_err(|err| err.to_string())?;
     let toast = ToastNotification::CreateToastNotification(&document).map_err(|err| err.to_string())?;
 
-    // Lets the app remove the chat's toasts once it is read elsewhere
     toast.SetGroup(&HSTRING::from(notification.chat_id.as_str())).map_err(|err| err.to_string())?;
     if let Some(message_id) = notification.message_id {
       toast.SetTag(&HSTRING::from(message_id.to_string())).map_err(|err| err.to_string())?;
@@ -292,7 +277,6 @@ mod imp {
     Ok(())
   }
 
-  // Windows can block toasts for the app, for the user or by a policy; the app then says so in settings
   pub fn get_setting(app: &AppHandle) -> &'static str {
     use windows::UI::Notifications::NotificationSetting;
 

@@ -45,7 +45,6 @@ function useWebAppFrame(
   onEvent: (event: WebAppInboundEvent) => void,
   webApp?: WebApp,
   onLoad?: () => void,
-  // Set when the mini app runs in its own native window instead of the iframe
   nativeWindowLabel?: string,
 ) {
   const {
@@ -195,11 +194,14 @@ function useWebAppFrame(
       return;
     }
 
+    let data: WebAppInboundEvent;
     try {
-      handleInboundEvent(JSON.parse(event.data) as WebAppInboundEvent);
-    } catch (err) {
-      // Ignore other messages
+      data = JSON.parse(event.data) as WebAppInboundEvent;
+    } catch {
+      return;
     }
+
+    handleInboundEvent(data);
   });
 
   const handleInboundEvent = useLastCallback((data: WebAppInboundEvent) => {

@@ -12,8 +12,6 @@ dev/perf/screenshot*
 .github/workflows/*
 !.github/workflows/package-and-publish.yml
 
-# Rust build output
 tauri/target/
 
-# Noirgram builds its own frontend into the exe; never commit it (it contains the API keys from .env)
 /dist/

@@ -49,7 +49,6 @@ export default function initTauriApi() {
 
   async function chooseDownloadDirectory() {
     const core = await corePromise;
-    // Rust `None` arrives as `null` when the folder picker is cancelled
     const result = await core.invoke<TauriDownloadSettings | undefined>('choose_download_directory');
     return result || undefined;
   }
@@ -69,7 +68,6 @@ export default function initTauriApi() {
     return core.invoke<boolean>('prepare_download', { url, filename, shouldAsk });
   }
 
-  // Rust `None` arrives as `null`
   function normalizeDesktopSettings(settings: TauriDesktopSettings) {
     return {
       ...settings,
@@ -130,7 +128,6 @@ export default function initTauriApi() {
     return core.invoke<void>('close_native_notifications', { chatId });
   }
 
-  // Raw bytes instead of JSON: files can be large
   async function startFileDrag(data: Uint8Array, filename: string) {
     const core = await corePromise;
     return core.invoke<void>('start_file_drag', data, {

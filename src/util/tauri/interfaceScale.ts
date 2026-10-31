@@ -1,5 +1,3 @@
-// Interface scale steps, like "Interface scale" in Telegram Desktop. The shell applies the zoom to every
-// app window and remembers it (`set_interface_scale` in `tauri/src/desktop.rs`).
 export const INTERFACE_SCALES = [0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 
 export function getNearestScaleIndex(scale: number) {

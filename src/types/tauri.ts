@@ -20,7 +20,6 @@ export type TauriDesktopSettings = {
   shouldCloseToTray: boolean;
   shouldLaunchAtStartup: boolean;
   proxy?: TauriProxySettings;
-  // Proxy URL the running app was started with; proxy changes apply after a restart
   activeProxy?: string;
   interfaceScale: number;
 };
@@ -32,13 +31,11 @@ export type TauriNativeNotification = {
   body: string;
   iconKey?: string;
   isSilent: boolean;
-  // Without labels the toast has no reply box and buttons
   replyPlaceholder?: string;
   replyLabel?: string;
   readLabel?: string;
 };
 
-// Whether Windows lets the app show toasts at all
 export type TauriNotificationsSetting = 'enabled' | 'disabled' | 'disabledByPolicy' | 'unknown';
 
 export type TauriNotificationAction = {

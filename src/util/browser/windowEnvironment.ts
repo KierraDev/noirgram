@@ -64,9 +64,7 @@ export const IS_PWA = (
 );
 
 export const IS_APP = IS_PWA || IS_TAURI;
-// macOS keeps native traffic lights; other desktop platforms get the app-drawn title bar
 export const HAS_WINDOW_TITLE_BAR = IS_TAURI && !IS_MAC_OS;
-// Keep in sync with `--window-title-bar-height` in `styles/noirgram/_window.scss`
 export const WINDOW_TITLE_BAR_HEIGHT = 36;
 
 export const IS_TOUCH_ENV = window.matchMedia('(pointer: coarse)').matches;

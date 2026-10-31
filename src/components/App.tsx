@@ -272,7 +272,6 @@ const App = ({
     document.body.classList.toggle('ng-avatars-squircle', avatarShape === 'squircle');
     document.body.classList.toggle('ng-density-compact', chatListDensity === 'compact');
     document.body.classList.toggle('ng-density-large', chatListDensity === 'large');
-    // The brand blue is the theme itself, other accents recolor it on top
     if (accent && accent !== 'noir') {
       document.body.dataset.ngAccent = accent;
     } else {

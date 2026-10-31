@@ -1,9 +1,6 @@
-// Personalization from "Settings › Noirgram": accent color, chat list density, desktop-dense menus.
-
 @use "sass:color";
 @use "sass:list";
 
-// `rgb` triplets for the variables the app also reads as `rgba(var(--name-rgb), alpha)`
 @function rgb-triplet($value) {
   $red: color.channel($value, "red", $space: rgb);
   $green: color.channel($value, "green", $space: rgb);
@@ -12,8 +9,6 @@
   @return "#{$red}, #{$green}, #{$blue}";
 }
 
-// Accent: [light theme, dark theme, own bubbles and selection in the dark theme].
-// Light values keep 4.5:1 on white, the deep ones keep 4.5:1 under white text.
 $accents: (
   violet: (#5f50c9, #a99bf0, #5b4bae),
   teal: (#187a75, #6fd3c8, #24706b),
@@ -49,7 +44,6 @@ body[data-ng-accent] {
   --color-chat-active: var(--ng-accent-deep);
   --color-chat-active-greyed: color-mix(in srgb, var(--ng-accent-deep) 70%, var(--color-background));
 
-  // Light theme: own bubbles are a pale tint with accent text and links
   --color-background-own: color-mix(in srgb, var(--ng-accent) 14%, white);
   --color-background-own-apple: var(--color-background-own);
   --color-background-own-selected: color-mix(in srgb, var(--ng-accent) 24%, white);
@@ -66,7 +60,6 @@ body[data-ng-accent] {
   --color-voice-transcribe-button-own: var(--color-message-reaction-own);
 }
 
-// Dark theme: own bubbles are the deep accent with white text, like the brand blue
 html.theme-dark body[data-ng-accent] {
   --color-background-own: var(--ng-accent-deep);
   --color-background-own-selected: color-mix(in srgb, var(--ng-accent-deep) 82%, black);
@@ -80,8 +73,6 @@ html.theme-dark body[data-ng-accent] {
   --color-message-reaction-hover-own: color-mix(in srgb, var(--ng-accent-deep) 75%, black);
 }
 
-// Chat list density. Rows are virtualized by a fixed height (`util/noirgram/chatListDensity.ts`),
-// so the row is pinned to exactly that height here.
 @mixin chat-row($height) {
   .chat-list .Chat:not(.standalone) .ListItem-button {
     align-items: center;
@@ -112,7 +103,6 @@ body.ng-density-large {
   }
 }
 
-// Desktop-dense menus, like in Telegram Desktop: shorter rows, smaller icons
 @media (pointer: fine) {
   body .Menu .MenuItem:not(.compact) {
     padding: 0.4375rem 0.75rem;

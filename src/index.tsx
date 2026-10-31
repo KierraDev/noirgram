@@ -38,7 +38,6 @@ import updateWebmanifest from './util/updateWebmanifest';
 import App from './components/App';
 
 import './assets/fonts/roboto.css';
-// Noirgram UI font, bundled: Windows has neither Roboto nor SF
 import '@fontsource-variable/inter';
 import './styles/index.scss';
 

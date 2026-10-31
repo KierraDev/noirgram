@@ -71,20 +71,17 @@ const MEDIA_WINDOW_LABEL_PREFIX: &str = "media-";
 const MEDIA_VIEWER_PATH: &str = "/media-viewer.html";
 const MEDIA_WINDOW_MIN_WIDTH: f64 = 320.0;
 const MEDIA_WINDOW_MIN_HEIGHT: f64 = 240.0;
-// Share of the screen the detached viewer may take initially
 const MEDIA_WINDOW_SCREEN_SHARE: f64 = 0.85;
 const MINI_APP_BRIDGE_SCRIPT: &str = include_str!("mini_app_bridge.js");
 const DOWNLOADS_SUBDIRECTORY: &str = "Noirgram";
 const DOWNLOAD_SETTINGS_FILE: &str = "download-settings.json";
 
-// Mini app window label -> label of the app window that opened it
 static MINI_APP_OWNERS: LazyLock<Mutex<HashMap<String, String>>> =
   LazyLock::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct DownloadSettings {
-  // `None` means `Downloads/Noirgram`
   directory: Option<PathBuf>,
   should_ask: bool,
 }
@@ -100,11 +97,9 @@ struct DownloadSettingsInfo {
 static DOWNLOAD_SETTINGS: LazyLock<Mutex<DownloadSettings>> =
   LazyLock::new(|| Mutex::new(DownloadSettings::default()));
 
-// Download URL -> path the user picked in the "Save as" dialog right before starting it
 static PENDING_DOWNLOAD_PATHS: LazyLock<Mutex<HashMap<String, PathBuf>>> =
   LazyLock::new(|| Mutex::new(HashMap::new()));
 
-// Files saved during this run; only these (and files in the downloads folder) can be revealed
 static SAVED_DOWNLOADS: LazyLock<Mutex<HashSet<PathBuf>>> =
   LazyLock::new(|| Mutex::new(HashSet::new()));
 
@@ -126,9 +121,6 @@ pub const DEFAULT_WINDOW_TITLE: &str = match std::option_env!("APP_TITLE") {
   None => "Noirgram",
 };
 
-// Release builds serve the bundled frontend from a local HTTP server inside the app: Service Workers
-// (media streaming, progressive downloads) need an http(s) origin. The port is fixed because it is
-// part of the origin that keeps the Telegram session in IndexedDB.
 const LOCAL_SERVER_PORT: u16 = 47833;
 const DEV_SERVER_URL: &str = "http://localhost:1234";
 
@@ -170,7 +162,6 @@ pub(crate) fn save_window_url(app: &tauri::AppHandle, window_label: &str) {
 pub fn run() {
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-      // Launching the app again brings the existing window back, even from the tray
       let app_window = app
         .webview_windows()
         .into_iter()
@@ -195,7 +186,6 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_notification::init())
     .plugin(tauri_plugin_log::Builder::default().build())
-    // Visibility is ours (start minimized to tray), decorations are drawn by the web app
     .plugin(
       tauri_plugin_window_state::Builder::default()
         .with_state_flags(
@@ -235,7 +225,6 @@ pub fn run() {
         // Save current URL before hiding the last window
         save_window_url(&window.app_handle(), window.label());
 
-        // "Close to tray" is off: closing the last window quits, mini app windows included
         if !desktop::read().should_close_to_tray {
           api.prevent_close();
           window.app_handle().exit(0);
@@ -300,7 +289,6 @@ pub fn run() {
     if let Ok(mut settings) = DOWNLOAD_SETTINGS.lock() {
       *settings = load_download_settings(app.handle());
     }
-    // Before the first window: the proxy is part of the WebView2 environment
     desktop::init(app.handle());
     notifications::init(app.handle());
     file_drag::init();
@@ -363,7 +351,6 @@ pub fn run() {
     .build(tauri::generate_context!())
     .expect("error while building tauri application")
     .run(|app, event| {
-      // Toasts of a quit app would have dead "Reply" and "Mark as read" buttons
       if let tauri::RunEvent::Exit = event {
         notifications::clear_all(app);
       }
@@ -513,8 +500,6 @@ fn open_window(
   .min_inner_size(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
   .visible(is_visible)
   .disable_drag_drop_handler() // Required for Drag & Drop on Windows
-  // The app window only ever shows the app origin (see `on_navigation`), so it gets what a native
-  // client has without asking: microphone and camera for calls, notifications, clipboard images
   .on_permission_request(|_, kind| match kind {
     PermissionKind::Microphone
     | PermissionKind::Camera
@@ -530,8 +515,6 @@ fn open_window(
   .on_navigation(move |url| is_allowed_app_url(url, &base_url))
   .on_download(|window, event| {
     match event {
-      // Saved silently into the downloads folder (or where the user picked in `prepare_download`);
-      // the web app shows where the file went
       DownloadEvent::Requested { url, destination } => {
         let picked_path = PENDING_DOWNLOAD_PATHS
           .lock()
@@ -582,7 +565,6 @@ fn open_window(
     states.insert(window_label.to_string(), new_state);
   }
 
-  // The web app draws its own title bar with window controls on Windows and Linux
   #[cfg(not(target_os = "macos"))]
   let new_window_builder = new_window_builder.decorations(false).shadow(true);
 
@@ -628,7 +610,6 @@ fn read_download_settings() -> DownloadSettings {
     .unwrap_or_default()
 }
 
-// A custom folder that disappeared (unplugged drive, deleted) falls back to the default one
 fn get_downloads_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
   read_download_settings()
     .directory
@@ -687,7 +668,6 @@ fn get_download_settings(app: tauri::AppHandle) -> DownloadSettingsInfo {
   get_download_settings_info(&app)
 }
 
-// Dialogs block, so these commands are async and run off the main thread
 #[tauri::command]
 async fn choose_download_directory(
   app: tauri::AppHandle,
@@ -716,9 +696,6 @@ fn set_download_should_ask(app: tauri::AppHandle, should_ask: bool) -> Result<Do
   update_download_settings(&app, |settings| settings.should_ask = should_ask)
 }
 
-// Called by the web app right before it starts a download. With "Ask where to save" on, shows the
-// "Save as" dialog like Telegram Desktop does and remembers the pick for `DownloadEvent::Requested`.
-// Returns `false` when the user cancels.
 #[tauri::command]
 async fn prepare_download(
   app: tauri::AppHandle,
@@ -727,7 +704,6 @@ async fn prepare_download(
   filename: String,
   should_ask: Option<bool>,
 ) -> Result<bool, String> {
-  // `should_ask` is "Save as…" from a context menu, which always asks
   if !should_ask.unwrap_or(false) && !read_download_settings().should_ask {
     return Ok(true);
   }
@@ -760,7 +736,6 @@ async fn prepare_download(
   Ok(true)
 }
 
-// `photo.jpg` -> `photo (1).jpg` when the name is taken, like browsers do
 fn get_unique_path(dir: &Path, filename: &OsStr) -> PathBuf {
   let candidate = dir.join(filename);
   if !candidate.exists() {
@@ -826,7 +801,6 @@ fn open_in_file_manager(path: &Path, should_select: bool) -> Result<(), String> 
   result.map(|_| ()).map_err(|err| err.to_string())
 }
 
-// Only files that we saved ourselves can be revealed, never arbitrary paths from the web app
 #[tauri::command]
 fn reveal_download(app: tauri::AppHandle, path: String) -> Result<(), String> {
   let path = Path::new(&path).canonicalize().map_err(|err| err.to_string())?;
@@ -853,7 +827,6 @@ fn open_downloads_folder(app: tauri::AppHandle) -> Result<(), String> {
   open_in_file_manager(&downloads_dir, false)
 }
 
-// `canonicalize` returns `\\?\C:\...` on Windows, which Explorer does not understand
 fn dunce_path(path: &Path) -> PathBuf {
   let raw = path.to_string_lossy();
   match raw.strip_prefix(r"\\?\") {
@@ -872,14 +845,10 @@ fn is_media_window_label(label: &str) -> bool {
   label.starts_with(MEDIA_WINDOW_LABEL_PREFIX)
 }
 
-// Windows that are not the app itself: closing them never hides the app to the tray
 pub(crate) fn is_auxiliary_label(label: &str) -> bool {
   is_mini_app_label(label) || is_media_window_label(label)
 }
 
-// Media from a chat in its own window, like the Telegram Desktop viewer: it can sit on another screen
-// while the chat goes on. `src` is the media the app already has: a blob or a streamed (Service Worker)
-// URL of the app origin, played by the viewer page without its own Telegram connection.
 #[tauri::command]
 async fn open_media_window(
   app: tauri::AppHandle,
@@ -892,7 +861,6 @@ async fn open_media_window(
 ) -> Result<(), String> {
   let base_url = Url::parse(&BASE_URL).map_err(|err| err.to_string())?;
   let media_url = Url::parse(&src).map_err(|err| err.to_string())?;
-  // `blob:http://localhost:47833/<uuid>` carries the origin inside
   let media_origin_url = match media_url.scheme() {
     "blob" => Url::parse(media_url.path()).map_err(|err| err.to_string())?,
     _ => media_url.clone(),
@@ -907,7 +875,6 @@ async fn open_media_window(
     .append_pair("src", media_url.as_str())
     .append_pair("type", if is_video { "video" } else { "photo" });
 
-  // Fit the media into most of the current screen, keeping its aspect ratio
   let scale_factor = window.scale_factor().unwrap_or(1.0);
   let (max_width, max_height) = window
     .current_monitor()
@@ -955,8 +922,6 @@ fn get_mini_app_owner(label: &str) -> Option<String> {
     .and_then(|owners| owners.get(label).cloned())
 }
 
-// Mini apps run in their own native window like in Telegram Desktop. Their remote pages are
-// not embeddable into the app origin, and a window gives them real size and focus.
 #[tauri::command]
 async fn open_mini_app_window(
   app: tauri::AppHandle,
@@ -995,7 +960,6 @@ async fn open_mini_app_window(
     .theme(Some(tauri::Theme::Dark))
     .additional_browser_args(desktop::get_browser_args())
     .initialization_script(MINI_APP_BRIDGE_SCRIPT)
-    // Never let a mini app page into the app origin, which has the app's permissions
     .on_navigation(|url| {
       matches!(url.scheme(), "http" | "https")
         && Url::parse(&BASE_URL).map_or(true, |base_url| url.origin() != base_url.origin())
@@ -1023,7 +987,6 @@ fn close_mini_app_window(app: tauri::AppHandle, window: tauri::WebviewWindow, la
   }
 }
 
-// App window -> mini app: delivered through `Telegram.WebView.receiveEvent`
 #[tauri::command]
 fn mini_app_send_event(
   app: tauri::AppHandle,
@@ -1048,7 +1011,6 @@ fn mini_app_send_event(
     .map_err(|err| err.to_string())
 }
 
-// Mini app -> app window that owns it. The only command exposed to remote mini app pages.
 #[tauri::command]
 fn mini_app_post_event(window: tauri::WebviewWindow, event_type: String, event_data: Option<String>) {
   if !is_mini_app_label(window.label()) {

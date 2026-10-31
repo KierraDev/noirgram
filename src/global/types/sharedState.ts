@@ -45,7 +45,6 @@ export type NoirgramAvatarShape = 'circle' | 'squircle';
 export type NoirgramAccent = 'noir' | 'violet' | 'teal' | 'rose' | 'amber' | 'green' | 'silver';
 export type NoirgramChatListDensity = 'compact' | 'default' | 'large';
 
-// Client-side tweaks in the spirit of Swiftgram / exteraGram
 export interface NoirgramSettings {
   shouldHideStories?: boolean;
   shouldShowMessageSeconds?: boolean;

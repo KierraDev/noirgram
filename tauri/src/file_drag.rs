@@ -1,8 +1,3 @@
-// Dragging media and files out of a chat into Explorer or another app, like in Telegram Desktop.
-// The web app hands over the file bytes while the mouse button is still down, the file lands in a
-// temp folder, and a native drag starts from there. Drop targets may copy the file after the drop,
-// so temp files are only cleaned up on the next launch.
-
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
@@ -24,7 +19,6 @@ pub fn init() {
   std::fs::remove_dir_all(get_temp_root()).unwrap_or_default();
 }
 
-// Percent-decoded (headers are ASCII), reduced to a plain file name that Windows accepts
 fn sanitize_filename(raw: &str) -> String {
   let decoded = percent_decode(raw);
   let name = Path::new(&decoded)
@@ -78,7 +72,6 @@ fn percent_decode(raw: &str) -> String {
   String::from_utf8_lossy(&decoded).into_owned()
 }
 
-// A small preview under the cursor: the picture itself for images, the app icon for anything else
 fn get_preview(bytes: &[u8]) -> Vec<u8> {
   image::load_from_memory(bytes)
     .ok()
@@ -98,7 +91,6 @@ fn is_primary_button_pressed() -> bool {
   use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_RBUTTON};
   use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
 
-  // SAFETY: plain state queries without pointers
   unsafe {
     let button = if GetSystemMetrics(SM_SWAPBUTTON) != 0 { VK_RBUTTON } else { VK_LBUTTON };
     (GetAsyncKeyState(i32::from(button.0)) as u16 & 0x8000) != 0
@@ -135,11 +127,9 @@ pub async fn start_file_drag(app: AppHandle, window: WebviewWindow, request: Req
     return Err("File drag is not supported".into());
   }
 
-  // The OLE drag loop belongs to the window's thread
   #[cfg(not(target_os = "linux"))]
   app
     .run_on_main_thread(move || {
-      // Released while the file was being prepared: a drag now would drop it right under the cursor
       if !is_primary_button_pressed() {
         return;
       }

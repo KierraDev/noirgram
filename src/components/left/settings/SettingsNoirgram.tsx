@@ -28,7 +28,6 @@ type OwnProps = {
 
 type ToggleKey = Exclude<keyof NoirgramSettings, 'avatarShape' | 'accent' | 'chatListDensity'>;
 
-// Swatch colors only; the theme values live in `styles/noirgram/_personalize.scss`
 const ACCENTS: { value: NoirgramAccent; color: string; labelKey: RegularLangKey }[] = [
   { value: 'noir', color: '#87a6df', labelKey: 'NoirgramAccentNoir' },
   { value: 'violet', color: '#8c7be6', labelKey: 'NoirgramAccentViolet' },
